@@ -23,6 +23,8 @@ mco = "0.1"
 bincode = "1"
 serde = { version = "1", features = ["derive"] }
 
+serde_json = "1"
+
 [dev-dependencies]
 env_logger = "0.9"
 serde_json = "1"
