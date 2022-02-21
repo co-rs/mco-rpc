@@ -1,0 +1,28 @@
+[workspace]
+members = [
+ "example"
+]
+
+[package]
+name = "mco_rpc"
+version = "0.1.0"
+authors = ["zxj <zhuxiujia@qq.com>"]
+license = "MIT"
+documentation = "https://docs.rs/mco-rpc"
+homepage = "https://github.com/co-rs/mco"
+repository = "https://github.com/co-rs/mco-rpc"
+keywords = ["rpc", "protocol", "remote", "procedure", "serialize"]
+readme = "README.md"
+description = "RPC framework for Rust based on mco."
+
+[lib]
+# crate-type = ["dylib"]
+
+[dependencies]
+mco = "0.1"
+bincode = "1"
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+env_logger = "0.9"
+
