@@ -3,3 +3,4 @@ extern crate mco;
 
 pub mod codec;
 pub mod stub;
+pub mod proto;
