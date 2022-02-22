@@ -4,7 +4,7 @@ members = [
 ]
 
 [package]
-name = "mco_rpc"
+name = "mco-rpc"
 version = "0.1.0"
 authors = ["zxj <zhuxiujia@qq.com>"]
 license = "MIT"
