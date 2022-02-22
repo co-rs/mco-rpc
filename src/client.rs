@@ -1,5 +1,5 @@
-use codec::Codec;
+use codec::{Codec, Codecs};
 
-pub struct Client{
-
+pub struct Client {
+    codec: Codecs,
 }
