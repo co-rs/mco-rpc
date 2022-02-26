@@ -31,8 +31,6 @@ macro_rules! t {
 
 #[inline]
 fn handle_client(mut stream: TcpStream) {
-    // t!(stream.set_read_timeout(Some(Duration::from_secs(10))));
-    // t!(stream.set_write_timeout(Some(Duration::from_secs(10))));
     let mut read = vec![0; 1024 * 16]; // alloc in heap!
     loop {
         let n = t!(stream.read(&mut read));
