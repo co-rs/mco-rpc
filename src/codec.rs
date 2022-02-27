@@ -18,6 +18,7 @@ impl Default for Codecs{
     }
 }
 
+
 pub trait Codec {
     fn encode<T: Serialize + 'static>(&self, arg: T) -> Result<Vec<u8>, Error>;
     fn decode<T: DeserializeOwned + 'static>(&self, arg: &[u8]) -> Result<T, Error>;

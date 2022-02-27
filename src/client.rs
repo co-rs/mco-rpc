@@ -1,3 +1,4 @@
+use std::net::{SocketAddr, ToSocketAddrs};
 use mco::net::TcpStream;
 use codec::{BinCodec, Codec, Codecs};
 use stub::ClientStub;
@@ -9,8 +10,8 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn dial() -> std::io::Result<Self> {
-        let stream = TcpStream::connect(("0.0.0.0", 10000))?;
+    pub fn dial<A: ToSocketAddrs>(addr: A) -> std::io::Result<Self> {
+        let stream = TcpStream::connect(addr)?;
         Ok(Self {
             codec: Codecs::BinCodec(BinCodec {}),
             stub: ClientStub {},
