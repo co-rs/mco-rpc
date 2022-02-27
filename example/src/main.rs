@@ -1,9 +1,9 @@
 use std::io::Sink;
 use std::net::SocketAddr;
-use std::thread::{sleep, spawn};
 use std::time::Duration;
 use fast_log::config::Config;
 use fast_log::filter::ModuleFilter;
+use mco::coroutine::{sleep, spawn};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use mco_rpc::client::Client;
