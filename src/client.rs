@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::net::{SocketAddr, ToSocketAddrs};
 use mco::net::TcpStream;
 use codec::{BinCodec, Codec, Codecs};
@@ -9,7 +10,7 @@ use serde::Serialize;
 pub struct Client {
     codec: Codecs,
     stub: ClientStub,
-    stream: TcpStream,
+    stream: RefCell<TcpStream>,
 }
 
 impl Client {
@@ -18,11 +19,12 @@ impl Client {
         Ok(Self {
             codec: Codecs::BinCodec(BinCodec {}),
             stub: ClientStub {},
-            stream: stream,
+            stream: RefCell::new(stream),
         })
     }
 
-    pub fn call<Arg, Resp>(&self, func: &str, arg: Arg) -> Result<Resp> where Arg: Serialize, Resp: DeserializeOwned {
-        todo!()
+    pub fn call<Arg, Resp>(&self, func: &str, arg: Arg) -> Result<Resp> where Arg: Serialize + 'static, Resp: DeserializeOwned {
+        let resp: Resp = self.stub.call(func, arg, &self.codec, &mut *self.stream.borrow_mut())?;
+        return Ok(resp);
     }
 }

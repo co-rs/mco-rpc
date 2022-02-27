@@ -43,6 +43,7 @@ fn handle_client(mut stream: TcpStream) {
     loop {
         let n = t!(stream.read(&mut read));
         if n > 0 {
+            //TODO serve fn and return data
             t!(stream.write_all(&read[0..n]));
         } else {
             break;
