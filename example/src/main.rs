@@ -29,13 +29,13 @@ fn main() {
     spawn(|| {
         sleep(Duration::from_secs(1));
         let mut c = Client::dial(("127.0.0.1", 10000)).unwrap();
-        c.codec = Codecs::JsonCodec(JsonCodec{});
+        //c.codec = Codecs::JsonCodec(JsonCodec{});
         println!("dial success");
         let resp:i32 = c.call("handle",1).unwrap();
         println!("resp=>>>>>>>>>>>>>> :{}",resp);
     });
     let mut s = Server::default();
-    s.codec = Codecs::JsonCodec(JsonCodec{});
+    //s.codec = Codecs::JsonCodec(JsonCodec{});
     s.register("handle",H {});
     s.serve(("0.0.0.0", 10000));
     println!("Hello, world!");
