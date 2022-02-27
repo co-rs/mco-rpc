@@ -13,9 +13,9 @@ use serde::Serialize;
 use mco::std::errors::Result;
 
 pub struct Server {
-    handles: SyncHashMap<String, Box<dyn Stub>>,
-    codec: Codecs,
-    stub: ServerStub,
+    pub handles: SyncHashMap<String, Box<dyn Stub>>,
+    pub codec: Codecs,
+    pub stub: ServerStub,
 }
 
 impl Default for Server {
@@ -40,16 +40,7 @@ macro_rules! t {
 
 #[inline]
 fn handle_client(mut stream: TcpStream, server: Arc<Server>) {
-    let mut read = vec![0; 1024 * 16]; // alloc in heap!
-    loop {
-        let n = t!(stream.read(&mut read));
-        if n > 0 {
-            //TODO serve fn and return data
-            t!(stream.write_all(&read[0..n]));
-        } else {
-            break;
-        }
-    }
+    server.stub.call(&server.handles, &server.codec, &mut stream);
 }
 
 pub trait Stub {

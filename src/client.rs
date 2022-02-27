@@ -8,9 +8,9 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 pub struct Client {
-    codec: Codecs,
-    stub: ClientStub,
-    stream: RefCell<TcpStream>,
+    pub codec: Codecs,
+    pub stub: ClientStub,
+    pub stream: RefCell<TcpStream>,
 }
 
 impl Client {
