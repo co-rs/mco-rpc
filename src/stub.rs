@@ -13,17 +13,8 @@ use codec::{Codec, Codecs};
 use frame::{Frame, ReqBuf, RspBuf, WireError};
 use server::Stub;
 
-#[derive(Serialize, Deserialize)]
-pub struct PackHeader {
-    pub m: String,
-    //method
-    pub t: u64,
-    //tag
-    pub l: usize,//len
-}
 
-
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PackReq {
     //method
     pub m: String,
@@ -49,26 +40,33 @@ impl ClientStub {
         let id = {
             let mut id = self.tag.load(Ordering::SeqCst);
             id += 1;
-            self.tag.store(id,Ordering::SeqCst);
+            self.tag.store(id, Ordering::SeqCst);
             id
         };
         info!("request id = {}", id);
-        let arg_data=codec.encode(arg)?;
+        let arg = PackReq {
+            m: method.to_string(),
+            body: codec.encode(arg)?,
+        };
+        let arg_data = codec.encode(arg)?;
         req_buf.write_all(&arg_data)?;
-        let data= req_buf.finish(id);
+        let data = req_buf.finish(id);
+        stream.write_all(&data)?;
         // read the response
         loop {
             // deserialize the rsp
             let rsp_frame = Frame::decode_from(stream).map_err(|e| WireError::ClientDeserialize(e.to_string())).unwrap();
             // discard the rsp that is is not belong to us
             if rsp_frame.id == id {
+                info!("get response frame = {:?}", rsp_frame);
                 info!("get response id = {}", id);
-                let rsp_req=rsp_frame.decode_req();
-                let rsp_data=rsp_frame.decode_rsp().unwrap();
-                println!("client req get= {}",String::from_utf8(rsp_req.to_vec()).unwrap_or_default());
-                println!("client rsp get= {}",String::from_utf8(rsp_data.to_vec()).unwrap_or_default());
-                todo!();
-                //return Ok(rsp_frame);
+                let rsp_req = rsp_frame.decode_req();
+                let rsp_data = rsp_frame.decode_rsp().unwrap();
+                println!("client req get= {}", String::from_utf8(rsp_req.to_vec()).unwrap_or_default());
+                println!("client rsp get= {}", String::from_utf8(rsp_data.to_vec()).unwrap_or_default());
+
+                let resp: Resp = codec.decode(rsp_data)?;
+                return Ok(resp);
             }
         }
 
@@ -139,7 +137,6 @@ impl ServerStub {
             };
             info!("get request: id={:?}", req.id);
             let mut rsp = RspBuf::new();
-
             let req_data = req.decode_req();
             if let Ok(h) = codec.decode::<PackReq>(&req_data) {
                 let stub = stubs.get(&h.m);
@@ -164,54 +161,10 @@ impl ServerStub {
             }
             // let ret = server.service(req.decode_req(), &mut rsp);
             let data = rsp.finish(req.id, Ok(()));
-            info!("send rsp: id={}", req.id);
+            info!("send rsp ok: id={}", req.id);
             // send the result back to client
             stream.write(&data);
         }
-
-
-        // let mut buf_header = {
-        //     let mut buf = Vec::with_capacity(4096);
-        //     for _ in 0..4096 {
-        //         buf.push(0);
-        //     }
-        //     buf
-        // };
-        // loop {
-        //     reset(&mut buf_header);
-        //     let read_len = stream.read(&mut buf_header)?;
-        //     if read_len != 0 {
-        //         let buf_header = &buf_header[0..read_len];
-        //         println!("header-read-server len:{}", read_len);
-        //         println!("header-read-server:{}", String::from_utf8(buf_header.to_vec()).unwrap_or_default());
-        //         if let Ok(h) = codec.decode::<PackHeader>(&buf_header) {
-        //             let stub = stubs.get(&h.m);
-        //             if stub.is_none() {
-        //                 return Err(err!("method {} not find!",h.m));
-        //             }
-        //             let stub = stub.unwrap();
-        //             let mut buf = {
-        //                 let mut buf = Vec::with_capacity(h.l);
-        //                 for _ in 0..h.l {
-        //                     buf.push(0);
-        //                 }
-        //                 buf
-        //             };
-        //             let read_len = stream.read_to_end(&mut buf)?;
-        //
-        //             println!("body-read-server:{}", String::from_utf8(buf.to_vec()).unwrap_or_default());
-        //
-        //             let r = stub.accept(&buf, codec)?;
-        //             for x in r {
-        //                 buf.push(x);
-        //             }
-        //             stream.write_all(&buf)?;
-        //             stream.write_all(&[0]);//write eof
-        //             stream.flush()?;
-        //             return Ok(());
-        //         }
-        //     }
-        // }
     }
 }
 
