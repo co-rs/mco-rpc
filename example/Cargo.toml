@@ -13,3 +13,4 @@ mco-rpc = {version="0.1",path = "../"}
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 bincode = "1"
+fast_log = "1.5"

@@ -2,6 +2,7 @@ use std::io::Sink;
 use std::net::SocketAddr;
 use std::thread::{sleep, spawn};
 use std::time::Duration;
+use fast_log::config::Config;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use mco_rpc::client::Client;
@@ -21,6 +22,7 @@ impl Handler for H {
 
 
 fn main() {
+    fast_log::init(Config::new().console());
     spawn(|| {
         sleep(Duration::from_secs(1));
         let mut c = Client::dial(SocketAddr::from(([127, 0, 0, 1], 10000))).unwrap();
