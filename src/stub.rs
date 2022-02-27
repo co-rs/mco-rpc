@@ -46,11 +46,9 @@ impl ClientStub {
                     }
                     buf
                 };
-                loop {
-                    stream.read(&mut buf)?;
-                    let resp: Resp = codec.decode(&buf)?;
-                    return Ok(resp);
-                }
+                stream.read(&mut buf)?;
+                let resp: Resp = codec.decode(&buf)?;
+                return Ok(resp);
             }
         }
     }
