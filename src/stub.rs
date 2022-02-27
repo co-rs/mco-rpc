@@ -58,7 +58,6 @@ impl ClientStub {
             let rsp_frame = Frame::decode_from(stream).map_err(|e| Error::from(e))?;
             // discard the rsp that is is not belong to us
             if rsp_frame.id == id {
-                info!("get response frame = {:?}", rsp_frame);
                 info!("get response id = {}", id);
                 let rsp_req = rsp_frame.decode_req();
                 let rsp_data = rsp_frame.decode_rsp().map_err(|e| Error::from(e.to_string()))?;
