@@ -1,20 +1,34 @@
-use std::io::{Read, Write};
+use std::io::{BufReader, Read, Write};
 use std::ops::Index;
 use std::sync::atomic::{AtomicU64, Ordering};
-use mco::err;
+use log::{error, info};
+use mco::{co, err};
+use mco::coroutine::spawn;
 use mco::net::TcpStream;
 use mco::std::errors::Result;
 use mco::std::map::SyncHashMap;
 use serde::de::DeserializeOwned;
 use serde::{Serialize, Deserialize};
 use codec::{Codec, Codecs};
+use frame::{Frame, RspBuf, WireError};
 use server::Stub;
 
 #[derive(Serialize, Deserialize)]
 pub struct PackHeader {
-    pub m: String,//method
-    pub t: u64,//tag
+    pub m: String,
+    //method
+    pub t: u64,
+    //tag
     pub l: usize,//len
+}
+
+
+#[derive(Serialize, Deserialize)]
+pub struct PackReq {
+    //method
+    pub m: String,
+    //method
+    pub body: Vec<u8>,
 }
 
 /// and the client request parameters are packaged into a network message,
@@ -81,49 +95,96 @@ impl ServerStub {
     pub fn new() -> Self {
         Self {}
     }
-    pub fn call(&self, stubs: &SyncHashMap<String, Box<dyn Stub>>, codec: &Codecs, mut stream: TcpStream) -> Result<()> {
-        let mut buf_header = {
-            let mut buf = Vec::with_capacity(4096);
-            for _ in 0..4096 {
-                buf.push(0);
-            }
-            buf
-        };
+    pub fn call(&self, stubs: &SyncHashMap<String, Box<dyn Stub>>, codec: &Codecs, mut stream: TcpStream) {
+        // the read half of the stream
+        let mut rs = BufReader::new(stream.try_clone().expect("failed to clone stream"));
         loop {
-            reset(&mut buf_header);
-            let read_len = stream.read(&mut buf_header)?;
-            if read_len != 0 {
-                let buf_header = &buf_header[0..read_len];
-                println!("header-read-server len:{}", read_len);
-                println!("header-read-server:{}", String::from_utf8(buf_header.to_vec()).unwrap_or_default());
-                if let Ok(h) = codec.decode::<PackHeader>(&buf_header) {
-                    let stub = stubs.get(&h.m);
-                    if stub.is_none() {
-                        return Err(err!("method {} not find!",h.m));
+            let req = match Frame::decode_from(&mut rs) {
+                Ok(r) => r,
+                Err(ref e) => {
+                    if e.kind() == std::io::ErrorKind::UnexpectedEof {
+                        info!("tcp server decode req: connection closed");
+                    } else {
+                        error!("tcp server decode req: err = {:?}", e);
                     }
-                    let stub = stub.unwrap();
-                    let mut buf = {
-                        let mut buf = Vec::with_capacity(h.l);
-                        for _ in 0..h.l {
-                            buf.push(0);
-                        }
-                        buf
-                    };
-                    let read_len = stream.read_to_end(&mut buf)?;
-
-                    println!("body-read-server:{}", String::from_utf8(buf.to_vec()).unwrap_or_default());
-
-                    let r = stub.accept(&buf, codec)?;
-                    for x in r {
-                        buf.push(x);
-                    }
-                    stream.write_all(&buf)?;
-                    stream.write_all(&[0]);//write eof
-                    stream.flush()?;
-                    return Ok(());
+                    break;
                 }
+            };
+            info!("get request: id={:?}", req.id);
+            let mut rsp = RspBuf::new();
+
+            let req_data = req.decode_req();
+            if let Ok(h) = codec.decode::<PackReq>(&req_data) {
+                let stub = stubs.get(&h.m);
+                if stub.is_none() {
+                    let data = rsp.finish(req.id, Err(WireError::ClientDeserialize(format!("method {} not find!", h.m))));
+                    info!("send rsp: id={}", req.id);
+                    // send the result back to client
+                    stream.write(&data);
+                    return;
+                }
+                let stub = stub.unwrap();
+                let r = stub.accept(&h.body, codec);
+                if let Err(e) = r {
+                    let data = rsp.finish(req.id, Err(WireError::ClientDeserialize(format!("accept {} fail!", e))));
+                    info!("send rsp: id={}", req.id);
+                    // send the result back to client
+                    stream.write(&data);
+                    return;
+                }
+                let r = r.unwrap();
+                rsp.write_all(&r);
             }
+            // let ret = server.service(req.decode_req(), &mut rsp);
+            let data = rsp.finish(req.id, Ok(()));
+            info!("send rsp: id={}", req.id);
+            // send the result back to client
+            stream.write(&data);
         }
+
+
+        // let mut buf_header = {
+        //     let mut buf = Vec::with_capacity(4096);
+        //     for _ in 0..4096 {
+        //         buf.push(0);
+        //     }
+        //     buf
+        // };
+        // loop {
+        //     reset(&mut buf_header);
+        //     let read_len = stream.read(&mut buf_header)?;
+        //     if read_len != 0 {
+        //         let buf_header = &buf_header[0..read_len];
+        //         println!("header-read-server len:{}", read_len);
+        //         println!("header-read-server:{}", String::from_utf8(buf_header.to_vec()).unwrap_or_default());
+        //         if let Ok(h) = codec.decode::<PackHeader>(&buf_header) {
+        //             let stub = stubs.get(&h.m);
+        //             if stub.is_none() {
+        //                 return Err(err!("method {} not find!",h.m));
+        //             }
+        //             let stub = stub.unwrap();
+        //             let mut buf = {
+        //                 let mut buf = Vec::with_capacity(h.l);
+        //                 for _ in 0..h.l {
+        //                     buf.push(0);
+        //                 }
+        //                 buf
+        //             };
+        //             let read_len = stream.read_to_end(&mut buf)?;
+        //
+        //             println!("body-read-server:{}", String::from_utf8(buf.to_vec()).unwrap_or_default());
+        //
+        //             let r = stub.accept(&buf, codec)?;
+        //             for x in r {
+        //                 buf.push(x);
+        //             }
+        //             stream.write_all(&buf)?;
+        //             stream.write_all(&[0]);//write eof
+        //             stream.flush()?;
+        //             return Ok(());
+        //         }
+        //     }
+        // }
     }
 }
 
