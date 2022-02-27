@@ -12,7 +12,7 @@ use serde::{Serialize, Deserialize};
 use codec::{Codec, Codecs};
 use frame::{Frame, ReqBuf, RspBuf, WireError};
 use server::Stub;
-
+use mco::std::errors::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PackReq {
@@ -55,13 +55,13 @@ impl ClientStub {
         // read the response
         loop {
             // deserialize the rsp
-            let rsp_frame = Frame::decode_from(stream).map_err(|e| WireError::ClientDeserialize(e.to_string())).unwrap();
+            let rsp_frame = Frame::decode_from(stream).map_err(|e| Error::from(e))?;
             // discard the rsp that is is not belong to us
             if rsp_frame.id == id {
                 info!("get response frame = {:?}", rsp_frame);
                 info!("get response id = {}", id);
                 let rsp_req = rsp_frame.decode_req();
-                let rsp_data = rsp_frame.decode_rsp().unwrap();
+                let rsp_data = rsp_frame.decode_rsp().map_err(|e| Error::from(e.to_string()))?;
                 let resp: Resp = codec.decode(rsp_data)?;
                 return Ok(resp);
             }

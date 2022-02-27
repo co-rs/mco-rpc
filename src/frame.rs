@@ -256,3 +256,15 @@ impl From<std::io::Error> for WireError{
          Self::ServerDeserialize(e.to_string())
     }
 }
+
+impl ToString for WireError{
+    fn to_string(&self) -> String {
+        match self{
+            WireError::ClientDeserialize(e) => {e.to_owned()}
+            WireError::ServerDeserialize(e) => {e.to_owned()}
+            WireError::ServerSerialize(e) => {e.to_owned()}
+            WireError::Status(e) => {e.to_owned()}
+            WireError::Polling => {"Polling".to_string()}
+        }
+    }
+}
