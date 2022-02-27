@@ -6,6 +6,7 @@ use stub::ServerStub;
 use std::io::Read;
 use std::io::Write;
 use std::net::ToSocketAddrs;
+use std::sync::Arc;
 use mco::std::sync::SyncHashMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -38,7 +39,7 @@ macro_rules! t {
 }
 
 #[inline]
-fn handle_client(mut stream: TcpStream) {
+fn handle_client(mut stream: TcpStream,server:Arc<Server>) {
     let mut read = vec![0; 1024 * 16]; // alloc in heap!
     loop {
         let n = t!(stream.read(&mut read));
@@ -88,16 +89,18 @@ impl Server {
         self.handles.insert(name.to_owned(), Box::new(handle));
     }
 
-    pub fn serve<A>(&self, addr: A) where A: ToSocketAddrs {
+    pub fn serve<A>(self, addr: A) where A: ToSocketAddrs {
         let listener = TcpListener::bind(addr).unwrap();
         println!(
             "Starting tcp echo server on {:?}",
             listener.local_addr().unwrap(),
         );
+        let server = Arc::new(self);
         for stream in listener.incoming() {
             match stream {
                 Ok(s) => {
-                    co!(move || handle_client(s));
+                    let server = server.clone();
+                    co!(move || handle_client(s,server));
                 }
                 Err(e) => println!("err = {:?}", e),
             }

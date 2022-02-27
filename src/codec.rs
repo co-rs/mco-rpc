@@ -24,7 +24,7 @@ pub trait Codec {
     fn decode<T: DeserializeOwned + 'static>(&self, arg: &[u8]) -> Result<T, Error>;
 }
 
-pub trait AnyCodec {
+pub trait AnyCodec:Send+Sync {
     fn encode(&self, arg: Box<dyn Any>) -> Result<Vec<u8>, Error>;
     fn decode(&self, arg: &[u8]) -> Result<Box<dyn Any>, Error>;
 }

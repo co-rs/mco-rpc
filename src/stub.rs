@@ -20,7 +20,7 @@ impl ClientStub {
 pub struct ServerStub {}
 
 impl ServerStub {
-    pub fn call<Arg: DeserializeOwned, Resp: Serialize>(&self, method: &str, arg: Arg, codec: &Codecs) -> Result<Resp> {
+    pub fn call<Arg: DeserializeOwned, Resp: Serialize>(&self, method: &str, arg: Arg, codec: &Codecs, stream: &mut TcpStream) -> Result<Resp> {
         todo!()
     }
 }
