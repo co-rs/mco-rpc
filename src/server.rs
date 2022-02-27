@@ -39,7 +39,7 @@ macro_rules! t {
 }
 
 #[inline]
-fn handle_client(mut stream: TcpStream,server:Arc<Server>) {
+fn handle_client(mut stream: TcpStream, server: Arc<Server>) {
     let mut read = vec![0; 1024 * 16]; // alloc in heap!
     loop {
         let n = t!(stream.read(&mut read));
@@ -57,7 +57,7 @@ pub trait Stub {
 }
 
 pub trait Handler {
-    type Req: DeserializeOwned + 'static;
+    type Req: DeserializeOwned;
     type Resp: Serialize + 'static;
     fn handle(&self, req: Self::Req) -> Result<Self::Resp>;
 }
@@ -71,18 +71,6 @@ impl<H: Handler> Stub for H {
     }
 }
 
-// impl<Req, Resp, F> Handler for F where
-//     Req: DeserializeOwned + 'static, Resp: Serialize + 'static,
-//     F: Fn(Req) -> Resp,
-//     F: Sync + Send
-// {
-//     type Req = Req;
-//     type Resp = Resp;
-//
-//     fn handle(&self, req: Self::Req) -> Result<Self::Resp> {
-//         self(req)
-//     }
-// }
 
 impl Server {
     pub fn register<H: 'static>(&mut self, name: &str, handle: H) where H: Handler {
