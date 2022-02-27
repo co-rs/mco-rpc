@@ -40,7 +40,7 @@ macro_rules! t {
 
 #[inline]
 fn handle_client(mut stream: TcpStream, server: Arc<Server>) {
-    server.stub.call(&server.handles, &server.codec, &mut stream);
+    server.stub.call(&server.handles, &server.codec, stream);
 }
 
 pub trait Stub {

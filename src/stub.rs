@@ -81,7 +81,7 @@ impl ServerStub {
     pub fn new() -> Self {
         Self {}
     }
-    pub fn call(&self, stubs: &SyncHashMap<String, Box<dyn Stub>>, codec: &Codecs, stream: &mut TcpStream) -> Result<()> {
+    pub fn call(&self, stubs: &SyncHashMap<String, Box<dyn Stub>>, codec: &Codecs, mut stream: TcpStream) -> Result<()> {
         let mut buf_header = {
             let mut buf = Vec::with_capacity(4096);
             for _ in 0..4096 {
