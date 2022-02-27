@@ -64,7 +64,7 @@ impl<H: Handler> Stub for H {
 
 
 impl Server {
-    pub fn register<H: 'static>(&mut self, name: &str, handle: H) where H: Handler {
+    pub fn register<H: 'static>(&mut self, name: &str, handle: H) where H: Stub {
         self.handles.insert(name.to_owned(), Box::new(handle));
     }
 
