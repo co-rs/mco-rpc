@@ -29,7 +29,7 @@ fn main() {
         c.codec = Codecs::JsonCodec(JsonCodec{});
         println!("dial success");
         let resp:i32 = c.call("handle",1).unwrap();
-        println!("resp=>>>>>>>>>>>>>> :{}",resp)
+        println!("resp=>>>>>>>>>>>>>> :{}",resp);
     });
     let mut s = Server::default();
     s.codec = Codecs::JsonCodec(JsonCodec{});
