@@ -2,6 +2,9 @@ use std::net::{SocketAddr, ToSocketAddrs};
 use mco::net::TcpStream;
 use codec::{BinCodec, Codec, Codecs};
 use stub::ClientStub;
+use mco::std::errors::Result;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 pub struct Client {
     codec: Codecs,
@@ -17,5 +20,9 @@ impl Client {
             stub: ClientStub {},
             stream: stream,
         })
+    }
+
+    pub fn call<Arg, Resp>(&self, func: &str, arg: Arg) -> Result<Resp> where Arg: Serialize, Resp: DeserializeOwned {
+        todo!()
     }
 }

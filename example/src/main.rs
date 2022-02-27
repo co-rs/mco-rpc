@@ -24,6 +24,8 @@ fn main() {
         sleep(Duration::from_secs(1));
         let c = Client::dial(SocketAddr::from(([127, 0, 0, 1], 10000))).unwrap();
         println!("dial success");
+        let resp:i32 = c.call("handle",1).unwrap();
+        println!("resp:{}",resp)
     });
     let mut s = Server::default();
     s.register("handle",H {});
