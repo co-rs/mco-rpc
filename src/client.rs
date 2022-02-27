@@ -18,7 +18,7 @@ impl Client {
         let stream = TcpStream::connect(addr)?;
         Ok(Self {
             codec: Codecs::BinCodec(BinCodec {}),
-            stub: ClientStub {},
+            stub: ClientStub::new(),
             stream: RefCell::new(stream),
         })
     }

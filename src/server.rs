@@ -23,7 +23,7 @@ impl Default for Server {
         Self {
             handles: SyncHashMap::new(),
             codec: Codecs::BinCodec(BinCodec {}),
-            stub: ServerStub {},
+            stub: ServerStub::new(),
         }
     }
 }
