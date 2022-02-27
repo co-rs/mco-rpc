@@ -14,7 +14,7 @@ impl ClientStub {
     }
 }
 
-/// Receives the message sent by the client, unpacks the message, and invokes the local method.
+/// Receives the message sent by the client, unpacks the me ssage, and invokes the local method.
 pub struct ServerStub {}
 
 impl ServerStub {
