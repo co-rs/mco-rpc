@@ -23,7 +23,7 @@ impl Client {
         })
     }
 
-    pub fn call<Arg, Resp>(&self, func: &str, arg: Arg) -> Result<Resp> where Arg: Serialize + 'static, Resp: DeserializeOwned {
+    pub fn call<Arg, Resp>(&self, func: &str, arg: Arg) -> Result<Resp> where Arg: Serialize, Resp: DeserializeOwned {
         let resp: Resp = self.stub.call(func, arg, &self.codec, &mut *self.stream.borrow_mut())?;
         return Ok(resp);
     }

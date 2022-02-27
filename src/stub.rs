@@ -35,7 +35,7 @@ impl ClientStub {
         }
     }
 
-    pub fn call<Arg: Serialize + 'static, Resp: DeserializeOwned>(&self, method: &str, arg: Arg, codec: &Codecs, stream: &mut TcpStream) -> Result<Resp> {
+    pub fn call<Arg: Serialize, Resp: DeserializeOwned>(&self, method: &str, arg: Arg, codec: &Codecs, stream: &mut TcpStream) -> Result<Resp> {
         let mut req_buf = ReqBuf::new();
         let id = {
             let mut id = self.tag.load(Ordering::SeqCst);

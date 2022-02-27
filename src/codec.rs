@@ -17,9 +17,8 @@ impl Default for Codecs {
     }
 }
 
-
 pub trait Codec {
-    fn encode<T: Serialize + 'static>(&self, arg: T) -> Result<Vec<u8>, Error>;
+    fn encode<T: Serialize>(&self, arg: T) -> Result<Vec<u8>, Error>;
     fn decode<T: DeserializeOwned>(&self, arg: &[u8]) -> Result<T, Error>;
 }
 
@@ -65,7 +64,7 @@ impl Codec for BinCodec {
 }
 
 impl Codec for Codecs {
-    fn encode<T: Serialize + 'static>(&self, arg: T) -> Result<Vec<u8>, Error> {
+    fn encode<T: Serialize>(&self, arg: T) -> Result<Vec<u8>, Error> {
         match self {
             Codecs::BinCodec(s) => { s.encode(arg) }
             Codecs::JsonCodec(s) => { s.encode(arg) }
