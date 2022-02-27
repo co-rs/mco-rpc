@@ -109,7 +109,7 @@ impl ServerStub {
                     info!("send rsp: id={}", req.id);
                     // send the result back to client
                     stream.write(&data);
-                    return;
+                    continue;
                 }
                 let r = r.unwrap();
                 rsp.write_all(&r);
