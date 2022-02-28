@@ -26,7 +26,7 @@ impl LoadBalance {
         }
     }
 
-    pub fn append(&mut self, arg: Client) {
+    pub fn put(&mut self, arg: Client) {
         self.rpc_clients_map.insert(arg.addr.clone(), Arc::new(arg));
         self.rpc_clients.clear();
         for (_, v) in &self.rpc_clients_map {
@@ -34,7 +34,7 @@ impl LoadBalance {
         }
     }
 
-    pub fn delete(&mut self, address: &str) {
+    pub fn remove(&mut self, address: &str) {
         self.rpc_clients_map.remove(address);
         self.rpc_clients.clear();
         for (_, v) in &self.rpc_clients_map {
@@ -82,6 +82,7 @@ impl LoadBalance {
         };
         return Some(self.rpc_clients[(hash % length) as usize].clone());
     }
+
     fn random_pick_client(&self) -> Option<Arc<Client>> {
         let length = self.rpc_clients.len();
         use rand::{thread_rng, Rng};
