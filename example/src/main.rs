@@ -4,6 +4,7 @@ use std::process::exit;
 use std::time::Duration;
 use fast_log::config::Config;
 use fast_log::filter::ModuleFilter;
+use mco::co;
 use mco::coroutine::{sleep, spawn};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -27,7 +28,7 @@ fn main() {
     fast_log::init(Config::new()
         .console()
         .filter(ModuleFilter::new_exclude(vec!["mco_rpc::".to_string()])));
-    spawn(|| {
+    co!(|| {
         sleep(Duration::from_secs(1));
         let c = Client::dial("127.0.0.1:10000").unwrap();
         //c.codec = Codecs::JsonCodec(JsonCodec{});
