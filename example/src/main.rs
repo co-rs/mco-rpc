@@ -1,4 +1,5 @@
 use std::io::Sink;
+use std::marker::PhantomData;
 use std::net::SocketAddr;
 use std::process::exit;
 use std::time::Duration;
@@ -10,7 +11,8 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use mco_rpc::client::Client;
 use mco_rpc::codec::{Codecs, JsonCodec};
-use mco_rpc::server::{Handler, Server, Stub};
+use mco_rpc::server::{HandleFn, Handler, Server, Stub};
+use mco::std::errors::Result;
 
 pub struct H {}
 
@@ -23,6 +25,9 @@ impl Handler for H {
     }
 }
 
+fn handle(req: i32) -> mco::std::errors::Result<i32>{
+    return Ok(req+1);
+}
 
 fn main() {
     fast_log::init(Config::new()
@@ -39,7 +44,8 @@ fn main() {
     });
     let mut s = Server::default();
     //s.codec = Codecs::JsonCodec(JsonCodec{});
-    s.register("handle",H {});
+    s.register("handle", H {});
+    s.register("handle_fn",HandleFn::new(handle));
     s.serve("0.0.0.0:10000");
     println!("Hello, world!");
 }

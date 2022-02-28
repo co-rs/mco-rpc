@@ -5,6 +5,7 @@ use codec::{BinCodec, Codec, Codecs};
 use stub::ServerStub;
 use std::io::Read;
 use std::io::Write;
+use std::marker::PhantomData;
 use std::net::ToSocketAddrs;
 use std::sync::Arc;
 use mco::std::sync::SyncHashMap;
@@ -64,6 +65,28 @@ impl <H:Handler>Stub for H{
 //         Ok(codec.encode(data)?)
 //     }
 // }
+
+pub struct HandleFn<Req: DeserializeOwned, Resp: Serialize> {
+    pub f: Box<dyn Fn(Req) -> Result<Resp>>,
+}
+
+impl<Req: DeserializeOwned, Resp: Serialize> Handler for HandleFn<Req, Resp> {
+    type Req = Req;
+    type Resp = Resp;
+
+    fn handle(&self, req: Self::Req) -> mco::std::errors::Result<Self::Resp> {
+        (self.f)(req)
+    }
+}
+impl<Req: DeserializeOwned, Resp: Serialize> HandleFn<Req, Resp> {
+    pub fn new<F: 'static>(f: F) -> Self where F: Fn(Req) -> Result<Resp> {
+        Self {
+            f: Box::new(f),
+        }
+    }
+}
+
+
 
 impl Server {
     pub fn register<H: 'static>(&mut self, name: &str, handle: H) where H: Stub {
