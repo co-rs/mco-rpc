@@ -5,14 +5,13 @@ mco-rpc
 * based T-L-V.for example:  ```[Tag][Length][Value]```
 * support json/bincode
 * support load balance
-* support service found
 
 ## how to use?
 
 * client
 
 ```rust
- use mco_rpc::client::Client;
+use mco_rpc::client::Client;
 let c = Client::dial("127.0.0.1:10000").unwrap();
 let resp:i32 = c.call("handle", 1).unwrap();
 println!("resp=>>>>>>>>>>>>>> :{}", resp);
