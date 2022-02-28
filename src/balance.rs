@@ -96,6 +96,9 @@ impl LoadBalance {
 
     fn random_pick_client(&self) -> Option<Arc<Client>> {
         let length = self.rpc_clients.len();
+        if length == 0 {
+            return None;
+        }
         use rand::{thread_rng, Rng};
         let mut rng = thread_rng();
         let rand_index: usize = rng.gen_range(0..length);
@@ -106,11 +109,11 @@ impl LoadBalance {
     }
 
     fn round_pick_client(&self) -> Option<Arc<Client>> {
-        let idx = self.index.load(Ordering::SeqCst);
         let length = self.rpc_clients.len();
         if length == 0 {
             return None;
         }
+        let idx = self.index.load(Ordering::SeqCst);
         let return_obj = self.rpc_clients[idx].clone();
         if (idx + 1) > length {
             self.index.store(0, Ordering::SeqCst)
