@@ -36,7 +36,7 @@ fn latency(bencher: &mut Bencher) {
         let mut s = Server::default();
         //s.codec = Codecs::JsonCodec(JsonCodec{});
         s.register("handle",H {});
-        s.serve(("0.0.0.0", 10000));
+        s.serve(("127.0.0.1", 10000));
         println!("rpc served");
     });
     sleep(Duration::from_secs(1));
