@@ -28,9 +28,11 @@ impl Default for Server {
     }
 }
 
-#[inline]
-fn handle_client(mut stream: TcpStream, server: Arc<Server>) {
-    server.stub.call(&server.handles, &server.codec, stream);
+impl Server {
+    #[inline]
+    pub fn call(&self, stream: TcpStream) {
+        self.stub.call(&self.handles, &self.codec, stream);
+    }
 }
 
 pub trait Stub {
@@ -54,7 +56,7 @@ impl<H: Handler> Stub for H {
 
 
 impl Server {
-    pub fn register<H:'static>(&mut self, name: &str, handle: H) where H: Stub {
+    pub fn register<H: 'static>(&mut self, name: &str, handle: H) where H: Stub {
         self.handles.insert(name.to_owned(), Box::new(handle));
     }
 
@@ -69,7 +71,7 @@ impl Server {
             match stream {
                 Ok(s) => {
                     let server = server.clone();
-                    co!(move || handle_client(s,server));
+                    co!(move || server.call(s));
                 }
                 Err(e) => println!("err = {:?}", e),
             }
