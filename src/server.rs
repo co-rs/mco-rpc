@@ -39,21 +39,31 @@ pub trait Stub {
     fn accept(&self, arg: &[u8], codec: &Codecs) -> Result<Vec<u8>>;
 }
 
-pub trait Handler {
+pub trait Handler:Stub {
     type Req: DeserializeOwned;
     type Resp: Serialize;
-    fn handle(&self, req: Self::Req) -> Result<Self::Resp>;
-}
-
-impl<H: Handler> Stub for H {
     fn accept(&self, arg: &[u8], codec: &Codecs) -> Result<Vec<u8>> {
         //.or_else(|e| Result::Err(err!("{}",e)))?
-        let req: H::Req = codec.decode(arg)?;
+        let req: Self::Req = codec.decode(arg)?;
         let data = self.handle(req)?;
         Ok(codec.encode(data)?)
     }
+    fn handle(&self, req: Self::Req) -> Result<Self::Resp>;
 }
 
+impl <H:Handler>Stub for H{
+    fn accept(&self, arg: &[u8], codec: &Codecs) -> Result<Vec<u8>> {
+        <H as Handler>::accept(self,arg,codec)
+    }
+}
+
+// impl<F> Stub for F where F: Fn(i32)->Result<i32>, F: Sync + Send {
+//     fn accept(&self, arg: &[u8], codec: &Codecs) -> Result<Vec<u8>> {
+//         let req: i32 = codec.decode(arg)?;
+//         let data = self(req)?;
+//         Ok(codec.encode(data)?)
+//     }
+// }
 
 impl Server {
     pub fn register<H: 'static>(&mut self, name: &str, handle: H) where H: Stub {
