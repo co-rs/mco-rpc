@@ -15,25 +15,25 @@ fn bench_balance(b: &mut test::Bencher) {
     let mut load =LoadBalance::new();
     co!(||{
         let mut s = mco_rpc::server::Server::default();
-        s.serve(("127.0.0.1", 3000));
+        s.serve(("127.0.0.1", 13000));
     });
     co!(||{
         let mut s = mco_rpc::server::Server::default();
-        s.serve(("127.0.0.1", 3001));
+        s.serve(("127.0.0.1", 13001));
     });
     co!(||{
         let mut s = mco_rpc::server::Server::default();
-        s.serve(("127.0.0.1", 3002));
+        s.serve(("127.0.0.1", 13002));
     });
     co!(||{
         let mut s = mco_rpc::server::Server::default();
-        s.serve(("127.0.0.1", 3003));
+        s.serve(("127.0.0.1", 13003));
     });
     sleep(Duration::from_secs(2));
-    load.put(Client::dial("127.0.0.1:3000").unwrap());
-    load.put(Client::dial("127.0.0.1:3001").unwrap());
-    load.put(Client::dial("127.0.0.1:3002").unwrap());
-    load.put(Client::dial("127.0.0.1:3003").unwrap());
+    load.put(Client::dial("127.0.0.1:13000").unwrap());
+    load.put(Client::dial("127.0.0.1:13001").unwrap());
+    load.put(Client::dial("127.0.0.1:13002").unwrap());
+    load.put(Client::dial("127.0.0.1:13003").unwrap());
     b.iter(|| {
         load.do_balance(LoadBalanceType::LoadBalanceTypeRound,"");
     });
