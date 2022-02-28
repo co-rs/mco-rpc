@@ -4,6 +4,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use rand::Rng;
 use client::Client;
 
+#[derive(Debug)]
 pub struct LoadBalance {
     pub index: AtomicUsize,
     pub rpc_clients: Vec<Arc<Client>>,
