@@ -24,15 +24,13 @@ use mco_rpc::server::{Handler, Server, Stub};
 
 pub struct H {}
 
-impl Handler for H {
-    type Req = i32;
-    type Resp = i32;
-
-    fn handle(&self, req: Self::Req) -> mco::std::errors::Result<Self::Resp> {
-        Ok(req)
-    }
+fn handle(req: i32) -> mco::std::errors::Result<i32> {
+    Ok(req)
 }
 let mut s = Server::default ();
-s.register("handle", H {});
+s.register_fn("handle", handle);
+s.register_fn("handle_fn2", |arg:i32| -> Result<i32>{
+Ok(1)
+});
 s.serve("0.0.0.0:10000");
 ```

@@ -11,7 +11,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use mco_rpc::client::Client;
 use mco_rpc::codec::{Codecs, JsonCodec};
-use mco_rpc::server::{HandleFn, Handler, Server, Stub};
+use mco_rpc::server::{Handler, Server, Stub};
 use mco::std::errors::Result;
 
 pub struct H {}
@@ -45,10 +45,10 @@ fn main() {
     let mut s = Server::default();
     //s.codec = Codecs::JsonCodec(JsonCodec{});
     s.register("handle", H {});
-    s.register("handle_fn", HandleFn::new(handle));
-    s.register("handle_fn2", HandleFn::new(|arg:i32| -> Result<i32>{
+    s.register_fn("handle_fn", handle);
+    s.register_fn("handle_fn2", |arg:i32| -> Result<i32>{
         Ok(1)
-    }));
+    });
     s.serve("0.0.0.0:10000");
     println!("Hello, world!");
 }

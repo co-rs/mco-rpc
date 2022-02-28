@@ -40,7 +40,7 @@ pub trait Stub {
     fn accept(&self, arg: &[u8], codec: &Codecs) -> Result<Vec<u8>>;
 }
 
-pub trait Handler:Stub {
+pub trait Handler: Stub {
     type Req: DeserializeOwned;
     type Resp: Serialize;
     fn accept(&self, arg: &[u8], codec: &Codecs) -> Result<Vec<u8>> {
@@ -52,9 +52,9 @@ pub trait Handler:Stub {
     fn handle(&self, req: Self::Req) -> Result<Self::Resp>;
 }
 
-impl <H:Handler>Stub for H{
+impl<H: Handler> Stub for H {
     fn accept(&self, arg: &[u8], codec: &Codecs) -> Result<Vec<u8>> {
-        <H as Handler>::accept(self,arg,codec)
+        <H as Handler>::accept(self, arg, codec)
     }
 }
 
@@ -78,6 +78,7 @@ impl<Req: DeserializeOwned, Resp: Serialize> Handler for HandleFn<Req, Resp> {
         (self.f)(req)
     }
 }
+
 impl<Req: DeserializeOwned, Resp: Serialize> HandleFn<Req, Resp> {
     pub fn new<F: 'static>(f: F) -> Self where F: Fn(Req) -> Result<Resp> {
         Self {
@@ -87,10 +88,13 @@ impl<Req: DeserializeOwned, Resp: Serialize> HandleFn<Req, Resp> {
 }
 
 
-
 impl Server {
     pub fn register<H: 'static>(&mut self, name: &str, handle: H) where H: Stub {
         self.handles.insert(name.to_owned(), Box::new(handle));
+    }
+
+    pub fn register_fn<Req: DeserializeOwned + 'static, Resp: Serialize + 'static, F: 'static>(&mut self, name: &str, f: F) where F: Fn(Req) -> Result<Resp> {
+        self.handles.insert(name.to_owned(), Box::new(HandleFn::new(f)));
     }
 
     pub fn serve<A>(self, addr: A) where A: ToSocketAddrs {
