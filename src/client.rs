@@ -8,15 +8,18 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 pub struct Client {
+    pub addr: String,
     pub codec: Codecs,
     pub stub: ClientStub,
     pub stream: RefCell<TcpStream>,
 }
 
 impl Client {
-    pub fn dial<A: ToSocketAddrs>(addr: A) -> std::io::Result<Self> {
+    pub fn dial(addr: &str) -> std::io::Result<Self> {
+        let address = addr.to_string();
         let stream = TcpStream::connect(addr)?;
         Ok(Self {
+            addr: address,
             codec: Codecs::BinCodec(BinCodec {}),
             stub: ClientStub::new(),
             stream: RefCell::new(stream),

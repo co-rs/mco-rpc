@@ -11,7 +11,7 @@ mco-rpc
 
 ```rust
  use mco_rpc::client::Client;
-let c = Client::dial(("127.0.0.1", 10000)).unwrap();
+let c = Client::dial("127.0.0.1:10000").unwrap();
 let resp:i32 = c.call("handle", 1).unwrap();
 println!("resp=>>>>>>>>>>>>>> :{}", resp);
 ```
@@ -33,5 +33,5 @@ impl Handler for H {
 }
 let mut s = Server::default ();
 s.register("handle", H {});
-s.serve(("0.0.0.0", 10000));
+s.serve("0.0.0.0:10000");
 ```
