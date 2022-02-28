@@ -14,17 +14,6 @@ use mco_rpc::codec::{Codecs, JsonCodec};
 use mco_rpc::server::{Handler, Server, Stub};
 use mco::std::errors::Result;
 
-pub struct H {}
-
-impl Handler for H {
-    type Req = i32;
-    type Resp = i32;
-
-    fn handle(&self, req: Self::Req) -> mco::std::errors::Result<Self::Resp> {
-        Ok(req)
-    }
-}
-
 fn handle(req: i32) -> mco::std::errors::Result<i32> {
     return Ok(req + 1);
 }
@@ -44,8 +33,7 @@ fn main() {
     });
     let mut s = Server::default();
     //s.codec = Codecs::JsonCodec(JsonCodec{});
-    s.register("handle", H {});
-    s.register_fn("handle_fn", handle);
+    s.register_fn("handle", handle);
     s.register_fn("handle_fn2", |arg:i32| -> Result<i32>{
         Ok(1)
     });
