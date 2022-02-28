@@ -35,6 +35,6 @@ fn bench_balance(b: &mut test::Bencher) {
     load.put(Client::dial("127.0.0.1:13002").unwrap());
     load.put(Client::dial("127.0.0.1:13003").unwrap());
     b.iter(|| {
-        load.do_balance(LoadBalanceType::LoadBalanceTypeRound,"");
+        load.do_balance(LoadBalanceType::Round, "");
     });
 }

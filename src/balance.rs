@@ -11,11 +11,10 @@ pub struct LoadBalance {
 }
 
 pub enum LoadBalanceType {
-    LoadBalanceTypeRound,
-    LoadBalanceTypeRandom,
-    LoadBalanceTypeHASH,
+    Round,
+    Random,
+    Hash,
 }
-
 
 impl LoadBalance {
     pub fn new() -> Self {
@@ -59,13 +58,13 @@ impl LoadBalance {
 
     pub fn do_balance(&self, b: LoadBalanceType, client_ip: &str) -> Option<Arc<Client>> {
         match b {
-            LoadBalanceType::LoadBalanceTypeRound => {
+            LoadBalanceType::Round => {
                 self.round_pick_client()
             }
-            LoadBalanceType::LoadBalanceTypeRandom => {
+            LoadBalanceType::Random => {
                 self.random_pick_client()
             }
-            LoadBalanceType::LoadBalanceTypeHASH => {
+            LoadBalanceType::Hash => {
                 self.hash_pick_client(client_ip)
             }
         }
