@@ -1,5 +1,6 @@
 use std::io::Sink;
 use std::net::SocketAddr;
+use std::process::exit;
 use std::time::Duration;
 use fast_log::config::Config;
 use fast_log::filter::ModuleFilter;
@@ -33,6 +34,7 @@ fn main() {
         println!("dial success");
         let resp:i32 = c.call("handle",1).unwrap();
         println!("resp=>>>>>>>>>>>>>> :{}",resp);
+        exit(0);
     });
     let mut s = Server::default();
     //s.codec = Codecs::JsonCodec(JsonCodec{});

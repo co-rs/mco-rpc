@@ -28,16 +28,6 @@ impl Default for Server {
     }
 }
 
-
-macro_rules! t {
-    ($e:expr) => {
-        match $e {
-            Ok(val) => val,
-            Err(err) => return println!("err = {:?}", err),
-        }
-    };
-}
-
 #[inline]
 fn handle_client(mut stream: TcpStream, server: Arc<Server>) {
     server.stub.call(&server.handles, &server.codec, stream);
