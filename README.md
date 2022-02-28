@@ -8,6 +8,11 @@ mco-rpc
 
 ## how to use?
 
+```toml
+mco="0.1"
+mco-rpc = "0.1"
+```
+
 * client
 
 ```rust
