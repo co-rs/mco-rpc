@@ -123,9 +123,3 @@ impl ServerStub {
         }
     }
 }
-
-fn reset(buf: &mut Vec<u8>) {
-    for x in buf {
-        *x = 0;
-    }
-}
