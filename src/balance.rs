@@ -114,12 +114,12 @@ impl LoadBalance {
             return None;
         }
         let idx = self.index.load(Ordering::SeqCst);
-        let return_obj = self.rpc_clients[idx].clone();
-        if (idx + 1) > length {
+        if (idx + 1) >= length {
             self.index.store(0, Ordering::SeqCst)
         } else {
             self.index.store(idx + 1, Ordering::SeqCst);
         }
+        let return_obj = self.rpc_clients[idx].clone();
         return Some(return_obj);
     }
 }
