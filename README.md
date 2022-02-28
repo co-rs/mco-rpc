@@ -4,6 +4,8 @@ mco-rpc
 
 * based T-L-V.for example:  ```[Tag][Length][Value]```
 * support json/bincode
+* support load balance
+* support service found
 
 ## how to use?
 
