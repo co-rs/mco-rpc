@@ -40,7 +40,7 @@ fn latency(bencher: &mut Bencher) {
         println!("rpc served");
     });
     sleep(Duration::from_secs(1));
-    let mut c = Client::dial(SocketAddr::from(([127, 0, 0, 1], 10000))).unwrap();
+    let mut c = Client::dial("127.0.0.1:10000").unwrap();
     //c.codec = Codecs::JsonCodec(JsonCodec{});
     println!("dial success");
     let resp:i32 = c.call("handle",1).unwrap();
