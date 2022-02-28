@@ -7,7 +7,6 @@ use client::Client;
 pub struct LoadBalance {
     pub index: AtomicUsize,
     pub rpc_clients: Vec<Arc<Client>>,
-    pub rpc_clients_map: HashMap<String, Arc<Client>>,
 }
 
 pub enum LoadBalanceType {
@@ -22,27 +21,38 @@ impl LoadBalance {
         Self {
             index: AtomicUsize::new(0),
             rpc_clients: vec![],
-            rpc_clients_map: HashMap::new(),
         }
     }
 
     pub fn put(&mut self, arg: Client) {
-        self.rpc_clients_map.insert(arg.addr.clone(), Arc::new(arg));
-        self.rpc_clients.clear();
-        for (_, v) in &self.rpc_clients_map {
-            self.rpc_clients.push(v.clone());
+        let mut arg = Some(Arc::new(arg));
+        let addr = &arg.as_deref().unwrap().addr;
+        for x in &mut self.rpc_clients {
+            if x.addr.eq(addr) {
+                *x = arg.take().unwrap();
+                break;
+            }
+        }
+        if let Some(arg) = arg {
+            self.rpc_clients.push(arg);
         }
     }
 
     pub fn remove(&mut self, address: &str) {
-        self.rpc_clients_map.remove(address);
-        self.rpc_clients.clear();
-        for (_, v) in &self.rpc_clients_map {
-            self.rpc_clients.push(v.clone());
+        let mut idx = 0;
+        let mut need_remove = None;
+        for x in &self.rpc_clients {
+            if x.addr.eq(address) {
+                need_remove = Some(idx);
+            }
+            idx += 1;
+        }
+        if let Some(rm) = need_remove {
+            self.rpc_clients.remove(rm);
         }
     }
+
     pub fn clear(&mut self) {
-        self.rpc_clients_map.clear();
         self.rpc_clients.clear();
     }
 
