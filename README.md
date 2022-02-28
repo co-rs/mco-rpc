@@ -25,11 +25,10 @@ println!("resp=>>>>>>>>>>>>>> :{}", resp);
 * server
 
 ```rust
-use mco_rpc::server::{Handler, Server, Stub};
+use mco_rpc::server::Server;
+use mco::std::errors::Result;
 
-pub struct H {}
-
-fn handle(req: i32) -> mco::std::errors::Result<i32> {
+fn handle(req: i32) -> Result<i32> {
     Ok(req)
 }
 let mut s = Server::default ();
