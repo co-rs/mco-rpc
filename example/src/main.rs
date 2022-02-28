@@ -25,8 +25,8 @@ impl Handler for H {
     }
 }
 
-fn handle(req: i32) -> mco::std::errors::Result<i32>{
-    return Ok(req+1);
+fn handle(req: i32) -> mco::std::errors::Result<i32> {
+    return Ok(req + 1);
 }
 
 fn main() {
@@ -45,7 +45,10 @@ fn main() {
     let mut s = Server::default();
     //s.codec = Codecs::JsonCodec(JsonCodec{});
     s.register("handle", H {});
-    s.register("handle_fn",HandleFn::new(handle));
+    s.register("handle_fn", HandleFn::new(handle));
+    s.register("handle_fn2", HandleFn::new(|arg:i32| -> Result<i32>{
+        Ok(1)
+    }));
     s.serve("0.0.0.0:10000");
     println!("Hello, world!");
 }
