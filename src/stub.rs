@@ -24,6 +24,7 @@ pub struct PackReq {
 
 /// and the client request parameters are packaged into a network message,
 /// which is then sent to the server remotely over the network
+#[derive(Debug)]
 pub struct ClientStub {
     pub tag: AtomicU64,
 }

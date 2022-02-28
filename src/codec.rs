@@ -5,7 +5,7 @@ use mco::std::errors::Error;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-
+#[derive(Debug)]
 pub enum Codecs {
     BinCodec(BinCodec),
     JsonCodec(JsonCodec),
@@ -22,7 +22,7 @@ pub trait Codec {
     fn decode<T: DeserializeOwned>(&self, arg: &[u8]) -> Result<T, Error>;
 }
 
-
+#[derive(Debug)]
 pub struct JsonCodec {}
 
 impl Codec for JsonCodec {
@@ -45,6 +45,7 @@ impl Codec for JsonCodec {
     }
 }
 
+#[derive(Debug)]
 pub struct BinCodec {}
 
 impl Codec for BinCodec {

@@ -7,6 +7,7 @@ use mco::std::errors::Result;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+#[derive(Debug)]
 pub struct Client {
     pub addr: String,
     pub codec: Codecs,
