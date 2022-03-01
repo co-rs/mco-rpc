@@ -56,11 +56,11 @@ pub struct BalanceManger {
 }
 
 impl BalanceManger {
-    pub fn new<F>(cfg: ManagerConfig, f: Arc<F>) -> Arc<Self> where F: RegistryCenter + 'static {
+    pub fn new<F>(cfg: ManagerConfig, f: F) -> Arc<Self> where F: RegistryCenter + 'static {
         Arc::new(Self {
             config: cfg,
             clients: SyncHashMap::new(),
-            fetcher: f,
+            fetcher: Arc::new(f),
         })
     }
 
@@ -91,6 +91,16 @@ impl BalanceManger {
     pub fn spawn_pull(&self) {
         loop {
             let r = self.pull();
+            if r.is_err() {
+                log::error!("service fetch fail:{}",r.err().unwrap());
+            }
+            sleep(self.config.interval);
+        }
+    }
+
+    pub fn spawn_push(&self,service: String, addr: String) {
+        loop {
+            let r = self.fetcher.push(service.clone(),addr.clone());
             if r.is_err() {
                 log::error!("service fetch fail:{}",r.err().unwrap());
             }

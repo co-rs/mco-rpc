@@ -49,13 +49,12 @@ impl RegistryCenter for RedisCenter {
 }
 
 fn main() {
-    let center = Arc::new(RedisCenter::new());
-    let cener_clone = center.clone();
+    let m = BalanceManger::new(ManagerConfig::default(), RedisCenter::new());
+    let m_clone = m.clone();
     co!(|| {
-        spawn_server(cener_clone);
+        spawn_server(m_clone);
     });
     sleep(Duration::from_secs(2));
-    let m = Arc::new(BalanceManger::new(ManagerConfig::default(), center));
     let m_clone = m.clone();
     co!(move ||{
        m_clone.spawn_pull();
@@ -65,8 +64,10 @@ fn main() {
     println!("{}", r.unwrap());
 }
 
-fn spawn_server(center: Arc<RedisCenter>) {
-    center.push("test".to_string(), "127.0.0.1:10000".to_string());
+fn spawn_server(manager: Arc<BalanceManger>) {
+    co!(move ||{
+         manager.spawn_push("test".to_string(), "127.0.0.1:10000".to_string());
+    });
     let mut s = Server::default();
     s.register_fn("handle", |arg: i32| -> Result<i32>{
         Ok(1)
