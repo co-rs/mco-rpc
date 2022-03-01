@@ -46,15 +46,11 @@ impl<C> LoadBalance<C> where C: BalanceItem {
 
     pub fn remove(&mut self, address: &str) -> Option<Arc<C>> {
         let mut idx = 0;
-        let mut need_remove = None;
         for x in &self.rpc_clients {
             if x.addr().eq(address) {
-                need_remove = Some(idx);
+                return Some(self.rpc_clients.remove(idx));
             }
             idx += 1;
-        }
-        if let Some(rm) = need_remove {
-            return Some(self.rpc_clients.remove(rm));
         }
         return None;
     }
