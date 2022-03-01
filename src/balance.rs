@@ -30,9 +30,9 @@ impl<C> LoadBalance<C> where C: BalanceItem {
 
     pub fn put(&mut self, arg: C) {
         let mut arg = Some(Arc::new(arg));
-        let addr = &arg.as_deref().unwrap().addr();
+        let addr = arg.as_deref().unwrap().addr();
         for x in &mut self.rpc_clients {
-            if x.addr().eq(*addr) {
+            if x.addr().eq(addr) {
                 *x = arg.take().unwrap();
                 break;
             }
