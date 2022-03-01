@@ -14,7 +14,7 @@ use serde::Serialize;
 pub trait RegistryCenter: Sync + Send {
     ///fetch [service]Vec<addr>
     fn pull(&self) -> HashMap<String, Vec<String>>;
-    fn push(&self) -> Result<()>;
+    fn push(&self, service: String, addr: String) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -52,15 +52,15 @@ impl Default for ManagerConfig {
 pub struct BalanceManger {
     pub config: ManagerConfig,
     pub clients: SyncHashMap<String, LoadBalance<Client>>,
-    pub fetcher: Box<dyn RegistryCenter>,
+    pub fetcher: Arc<dyn RegistryCenter>,
 }
 
 impl BalanceManger {
-    pub fn new<F>(cfg: ManagerConfig, f: F) -> Arc<Self> where F: RegistryCenter + 'static {
+    pub fn new<F>(cfg: ManagerConfig, f: Arc<F>) -> Arc<Self> where F: RegistryCenter + 'static {
         Arc::new(Self {
             config: cfg,
             clients: SyncHashMap::new(),
-            fetcher: Box::new(f),
+            fetcher: f,
         })
     }
 
@@ -100,7 +100,7 @@ impl BalanceManger {
 
     pub fn call<Arg, Resp>(&self, service: &str, func: &str, arg: Arg) -> Result<Resp> where Arg: Serialize, Resp: DeserializeOwned {
         return match self.clients.get(service)
-            .ok_or(err!("no service :{} find!",service))?
+            .ok_or(err!("no service '{}' find!",service))?
             .do_balance(self.config.balance, "") {
             None => {
                 Err(err!("no client to call!"))
@@ -113,7 +113,7 @@ impl BalanceManger {
 
     pub fn call_all<Arg, Resp>(&self, service: &str, func: &str, arg: Arg, ip: &str) -> Result<Resp> where Arg: Serialize, Resp: DeserializeOwned {
         return match self.clients
-            .get(service).ok_or(err!("no service :{} find!",service))?
+            .get(service).ok_or(err!("no service '{}' find!",service))?
             .do_balance(self.config.balance, ip) {
             None => {
                 Err(err!("no client to call!"))
