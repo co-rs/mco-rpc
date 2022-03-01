@@ -12,7 +12,7 @@ use serde::Serialize;
 
 /// to fetch remote service addr list
 pub trait Fetcher: Sync + Send {
-    ///fetch addrs
+    ///fetch [service]Vec<addr>
     fn fetch(&self) -> HashMap<String, Vec<String>>;
 }
 
