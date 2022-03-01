@@ -25,7 +25,8 @@ impl RedisCenter {
 impl RegistryCenter for RedisCenter {
     fn pull(&self) -> HashMap<String, Vec<String>> {
         let mut m = HashMap::new();
-        if let Ok(v) = self.c.exec(cmd::Get("test")) {
+        //TODO use redis keys command get all service
+        if let Ok(v) = self.c.exec(cmd::Get("service_test")) {
             let data = String::from_utf8(v.unwrap_or_default().to_vec()).unwrap_or_default();
             let mut addrs: Vec<String> = serde_json::from_str(&data).unwrap_or_default();
             m.insert("test".to_string(), addrs);
@@ -33,17 +34,18 @@ impl RegistryCenter for RedisCenter {
         return m;
     }
 
-    fn push(&self, service: String, addr: String) -> Result<()> {
+    fn push(&self, service: String, addr: String,ex:Duration) -> Result<()> {
         if let Ok(v) = self.c.exec(cmd::Get(&service)) {
             let data = String::from_utf8(v.unwrap_or_default().to_vec()).unwrap_or_default();
             let mut addrs: Vec<String> = serde_json::from_str(&data).unwrap_or_default();
             if !addrs.contains(&addr) {
                 addrs.push(addr.clone());
             }
-            self.c.exec(cmd::Set(service.clone(), serde_json::to_string(&addrs).unwrap_or_default())).unwrap();
+            self.c.exec(cmd::Set(format!("service_{}",service), serde_json::to_string(&addrs).unwrap_or_default())
+                .expire_secs(ex.as_secs() as i64)).unwrap();
             return Ok(());
         }
-        self.c.exec(cmd::Set(service, serde_json::to_string(&vec![addr]).unwrap_or_default())).unwrap();
+        self.c.exec(cmd::Set(format!("service_{}",service), serde_json::to_string(&vec![addr]).unwrap_or_default())).unwrap();
         return Ok(());
     }
 }

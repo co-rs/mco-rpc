@@ -14,7 +14,7 @@ use serde::Serialize;
 pub trait RegistryCenter: Sync + Send {
     ///fetch [service]Vec<addr>
     fn pull(&self) -> HashMap<String, Vec<String>>;
-    fn push(&self, service: String, addr: String) -> Result<()>;
+    fn push(&self, service: String, addr: String, ex:Duration) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -100,7 +100,7 @@ impl BalanceManger {
 
     pub fn spawn_push(&self,service: String, addr: String) {
         loop {
-            let r = self.fetcher.push(service.clone(),addr.clone());
+            let r = self.fetcher.push(service.clone(),addr.clone(),self.config.interval.clone());
             if r.is_err() {
                 log::error!("service fetch fail:{}",r.err().unwrap());
             }
