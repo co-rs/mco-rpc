@@ -1,22 +1,28 @@
-use balance::LoadBalance;
+use std::sync::Arc;
+use mco::err;
+use balance::{LoadBalance, LoadBalanceType};
 use client::Client;
 use mco::std::errors::Result;
 use mco::std::sync::Mutex;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 
-pub trait AddrFetcher {
-    fn fetch_addr(&self) -> Vec<String>;
+pub trait Fetcher {
+    ///fetch addrs
+    fn fetch(&self) -> Vec<String>;
 }
 
 /// this is a connect manager.
 /// Accepts a server addresses list，make a client list.
 pub struct Manager {
+    pub balance: LoadBalanceType,
     pub clients: LoadBalance<Client>,
-    pub addr_fetcher: Box<dyn AddrFetcher>,
+    pub fetcher: Box<dyn Fetcher>,
 }
 
 impl Manager {
     pub fn fetch(&mut self) -> Result<()> {
-        let addrs = self.addr_fetcher.fetch_addr();
+        let addrs = self.fetcher.fetch();
         for addr in addrs {
             if !self.clients.have(&addr) {
                 let c = Client::dial(&addr)?;
@@ -24,5 +30,16 @@ impl Manager {
             }
         }
         return Ok(());
+    }
+
+    pub fn call<Arg, Resp>(&self, func: &str, arg: Arg) -> Result<Resp> where Arg: Serialize, Resp: DeserializeOwned {
+        return match self.clients.do_balance(self.balance, "") {
+            None => {
+                Err(err!("no client to call!"))
+            }
+            Some(c) => {
+                c.call(func, arg)
+            }
+        };
     }
 }

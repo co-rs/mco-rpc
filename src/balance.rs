@@ -17,6 +17,7 @@ pub struct LoadBalance<C> where C: RpcClient {
 }
 
 /// an load balance type.
+#[derive(Clone,Debug,Copy)]
 pub enum LoadBalanceType {
     /// RPC clients take turns to execute
     Round,
