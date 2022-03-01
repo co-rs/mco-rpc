@@ -62,7 +62,7 @@ fn main() {
     });
     sleep(Duration::from_secs(2));
     let r = m.call::<i32, i32>("test", "handle", 1);
-    println!("{}", r.unwrap());
+    println!("-> test.handle(1)\n<- {}", r.unwrap());
 }
 
 fn spawn_server(manager: Arc<BalanceManger>) {
