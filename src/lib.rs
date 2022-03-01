@@ -17,4 +17,6 @@ pub mod client;
 pub mod server;
 pub mod frame;
 pub mod balance;
-pub mod manager;
+pub mod balance_manager;
+
+pub use balance_manager::*;
