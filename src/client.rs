@@ -6,6 +6,7 @@ use stub::ClientStub;
 use mco::std::errors::Result;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use balance::BalanceItem;
 
 #[derive(Debug)]
 pub struct Client {
@@ -30,5 +31,11 @@ impl Client {
     pub fn call<Arg, Resp>(&self, func: &str, arg: Arg) -> Result<Resp> where Arg: Serialize, Resp: DeserializeOwned {
         let resp: Resp = self.stub.call(func, arg, &self.codec, &mut *self.stream.borrow_mut())?;
         return Ok(resp);
+    }
+}
+
+impl BalanceItem for Client{
+    fn addr(&self) -> &str {
+        self.addr.as_str()
     }
 }
