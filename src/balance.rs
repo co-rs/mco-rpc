@@ -2,8 +2,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use rand::Rng;
-use client::Client;
-
 
 pub trait BalanceItem {
     fn addr(&self) -> &str;
