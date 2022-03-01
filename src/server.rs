@@ -58,14 +58,6 @@ impl<H: Handler> Stub for H {
     }
 }
 
-// impl<F> Stub for F where F: Fn(i32)->Result<i32>, F: Sync + Send {
-//     fn accept(&self, arg: &[u8], codec: &Codecs) -> Result<Vec<u8>> {
-//         let req: i32 = codec.decode(arg)?;
-//         let data = self(req)?;
-//         Ok(codec.encode(data)?)
-//     }
-// }
-
 pub struct HandleFn<Req: DeserializeOwned, Resp: Serialize> {
     pub f: Box<dyn Fn(Req) -> Result<Resp>>,
 }
