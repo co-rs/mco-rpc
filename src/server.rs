@@ -58,14 +58,6 @@ impl<H: Handler> Stub for H {
     }
 }
 
-// impl<F> Stub for F where F: Fn(i32)->Result<i32>, F: Sync + Send {
-//     fn accept(&self, arg: &[u8], codec: &Codecs) -> Result<Vec<u8>> {
-//         let req: i32 = codec.decode(arg)?;
-//         let data = self(req)?;
-//         Ok(codec.encode(data)?)
-//     }
-// }
-
 pub struct HandleFn<Req: DeserializeOwned, Resp: Serialize> {
     pub f: Box<dyn Fn(Req) -> Result<Resp>>,
 }
@@ -89,10 +81,42 @@ impl<Req: DeserializeOwned, Resp: Serialize> HandleFn<Req, Resp> {
 
 
 impl Server {
+    ///register a handle to server
+    /// ```
+    /// use mco_rpc::server::{Handler};
+    /// use mco::std::errors::Result;
+    ///
+    /// pub struct H{}
+    ///
+    /// impl Handler for H{
+    ///     type Req = i32;
+    ///     type Resp = i32;
+    ///
+    ///     fn handle(&self, req: Self::Req) -> Result<Self::Resp> {
+    ///         return Ok(req);
+    ///     }
+    /// }
+    ///
+    /// ```
     pub fn register<H: 'static>(&mut self, name: &str, handle: H) where H: Stub {
         self.handles.insert(name.to_owned(), Box::new(handle));
     }
 
+    /// register a func into server
+    /// for example:
+    /// ```
+    /// use mco_rpc::server::{Server};
+    /// use mco::std::errors::Result;
+    /// let mut s = Server::default();
+    /// fn handle(req: i32) -> mco::std::errors::Result<i32> {
+    ///     return Ok(req + 1);
+    /// }
+    ///     //s.codec = Codecs::JsonCodec(JsonCodec{});
+    ///     s.register_fn("handle", handle);
+    ///     s.register_fn("handle_fn2", |arg:i32| -> Result<i32>{
+    ///         Ok(1)
+    ///     });
+    /// ```
     pub fn register_fn<Req: DeserializeOwned + 'static, Resp: Serialize + 'static, F: 'static>(&mut self, name: &str, f: F) where F: Fn(Req) -> Result<Resp> {
         self.handles.insert(name.to_owned(), Box::new(HandleFn::new(f)));
     }

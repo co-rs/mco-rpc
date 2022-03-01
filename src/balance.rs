@@ -1,62 +1,90 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use mco::std::sync::SyncVec;
 use rand::Rng;
-use client::Client;
+
+///Defines the minimum abstraction required by the load algorithm
+///The four common load algorithms simply provide remote IP addresses
+///To use the LoadBalance structure, the client must implement this trait
+pub trait RpcClient {
+    fn addr(&self) -> &str;
+}
 
 #[derive(Debug)]
-pub struct LoadBalance {
+pub struct LoadBalance<C> where C: RpcClient {
     pub index: AtomicUsize,
-    pub rpc_clients: Vec<Arc<Client>>,
+    pub rpc_clients: SyncVec<Arc<C>>,
 }
 
+/// an load balance type.
+#[derive(Clone, Debug, Copy)]
 pub enum LoadBalanceType {
+    /// RPC clients take turns to execute
     Round,
+    /// RPC clients random pick one
     Random,
+    /// RPC clients pick one by address's hashcode，so client_ip with client that is matches in pairs
     Hash,
+    /// RPC clients pick on by Has the minimum number of TCP connections
+    MinConnect,
 }
 
-impl LoadBalance {
+impl<C> LoadBalance<C> where C: RpcClient {
     pub fn new() -> Self {
         Self {
             index: AtomicUsize::new(0),
-            rpc_clients: vec![],
+            rpc_clients: SyncVec::new(),
         }
     }
 
-    pub fn put(&mut self, arg: Client) {
+    /// put client,and return old client
+    pub fn put(&self, arg: C) -> Option<Arc<C>> {
         let mut arg = Some(Arc::new(arg));
-        let addr = &arg.as_deref().unwrap().addr;
-        for x in &mut self.rpc_clients {
-            if x.addr.eq(addr) {
-                *x = arg.take().unwrap();
-                break;
+        let addr = arg.as_deref().unwrap().addr();
+        let mut idx = 0;
+        for x in &self.rpc_clients {
+            if x.addr().eq(addr) {
+                let rm = self.rpc_clients.remove(idx);
+                if rm.is_none() {
+                    self.rpc_clients.push(arg.unwrap());
+                    return None;
+                }
+                return rm;
             }
+            idx += 1;
         }
         if let Some(arg) = arg {
             self.rpc_clients.push(arg);
         }
+        return None;
     }
 
-    pub fn remove(&mut self, address: &str) {
+    pub fn remove(&self, address: &str) -> Option<Arc<C>> {
         let mut idx = 0;
-        let mut need_remove = None;
         for x in &self.rpc_clients {
-            if x.addr.eq(address) {
-                need_remove = Some(idx);
+            if x.addr().eq(address) {
+                return self.rpc_clients.remove(idx);
             }
             idx += 1;
         }
-        if let Some(rm) = need_remove {
-            self.rpc_clients.remove(rm);
-        }
+        return None;
     }
 
-    pub fn clear(&mut self) {
+    pub fn have(&self, address: &str) -> bool {
+        for x in &self.rpc_clients {
+            if x.addr().eq(address) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    pub fn clear(&self) {
         self.rpc_clients.clear();
     }
 
-    pub fn do_balance(&self, b: LoadBalanceType, client_ip: &str) -> Option<Arc<Client>> {
+    pub fn do_balance(&self, b: LoadBalanceType, client_ip: &str) -> Option<Arc<C>> {
         match b {
             LoadBalanceType::Round => {
                 self.round_pick_client()
@@ -67,10 +95,13 @@ impl LoadBalance {
             LoadBalanceType::Hash => {
                 self.hash_pick_client(client_ip)
             }
+            LoadBalanceType::MinConnect => {
+                self.min_connect_client()
+            }
         }
     }
 
-    fn hash_pick_client(&self, client_ip: &str) -> Option<Arc<Client>> {
+    fn hash_pick_client(&self, client_ip: &str) -> Option<Arc<C>> {
         let length = self.rpc_clients.len() as i64;
         if length == 0 {
             return None;
@@ -90,10 +121,10 @@ impl LoadBalance {
             }
             value
         };
-        return Some(self.rpc_clients[(hash % length) as usize].clone());
+        return Some(self.rpc_clients.get((hash % length) as usize).unwrap().clone());
     }
 
-    fn random_pick_client(&self) -> Option<Arc<Client>> {
+    fn random_pick_client(&self) -> Option<Arc<C>> {
         let length = self.rpc_clients.len();
         if length == 0 {
             return None;
@@ -102,12 +133,12 @@ impl LoadBalance {
         let mut rng = thread_rng();
         let rand_index: usize = rng.gen_range(0..length);
         if rand_index < length {
-            return Some(self.rpc_clients[rand_index].clone());
+            return Some(self.rpc_clients.get(rand_index).unwrap().clone());
         }
         return None;
     }
 
-    fn round_pick_client(&self) -> Option<Arc<Client>> {
+    fn round_pick_client(&self) -> Option<Arc<C>> {
         let length = self.rpc_clients.len();
         if length == 0 {
             return None;
@@ -118,7 +149,78 @@ impl LoadBalance {
         } else {
             self.index.store(idx + 1, Ordering::SeqCst);
         }
-        let return_obj = self.rpc_clients[idx].clone();
+        let return_obj = self.rpc_clients.get(idx).unwrap().clone();
         return Some(return_obj);
+    }
+
+    fn min_connect_client(&self) -> Option<Arc<C>> {
+        let mut min = -1i64;
+        let mut result = None;
+        for x in &self.rpc_clients {
+            if min == -1 || Arc::strong_count(x) < min as usize {
+                min = Arc::strong_count(x) as i64;
+                result = Some(x.clone());
+            }
+        }
+        result
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use balance::{RpcClient, LoadBalance, LoadBalanceType};
+
+    impl RpcClient for String {
+        fn addr(&self) -> &str {
+            &self
+        }
+    }
+
+    #[test]
+    fn test_put() {
+        let mut load: LoadBalance<String> = LoadBalance::new();
+        load.put("127.0.0.1:13000".to_string());
+        load.put("127.0.0.1:13001".to_string());
+
+        let old = load.put("127.0.0.1:13001".to_string()).unwrap();
+        assert_eq!(old.addr(), "127.0.0.1:13001".to_string());
+    }
+
+    #[test]
+    fn test_remove() {
+        let mut load: LoadBalance<String> = LoadBalance::new();
+        load.put("127.0.0.1:13000".to_string());
+        load.put("127.0.0.1:13001".to_string());
+
+        let old = load.remove("127.0.0.1:13000").unwrap();
+        assert_eq!(old.addr(), "127.0.0.1:13000".to_string());
+    }
+
+    #[test]
+    fn test_min_connect() {
+        let mut load: LoadBalance<String> = LoadBalance::new();
+        load.put("127.0.0.1:13000".to_string());
+        load.put("127.0.0.1:13001".to_string());
+        load.put("127.0.0.1:13002".to_string());
+        load.put("127.0.0.1:13003".to_string());
+        let mut v = vec![];
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}", item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}", item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}", item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}", item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}", item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}", item.as_ref().unwrap().addr());
+        v.push(item);
     }
 }
