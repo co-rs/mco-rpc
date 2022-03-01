@@ -42,4 +42,15 @@ impl Manager {
             }
         };
     }
+
+    pub fn call_hash<Arg, Resp>(&self, func: &str, arg: Arg, ip: &str) -> Result<Resp> where Arg: Serialize, Resp: DeserializeOwned {
+        return match self.clients.do_balance(LoadBalanceType::Hash, ip) {
+            None => {
+                Err(err!("no client to call!"))
+            }
+            Some(c) => {
+                c.call(func, arg)
+            }
+        };
+    }
 }
