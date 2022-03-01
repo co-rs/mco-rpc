@@ -42,8 +42,9 @@ impl ClientStub {
             let mut id = self.tag.load(Ordering::SeqCst);
             if id == u64::MAX{
                 id = 0;
+            }else{
+                id += 1;
             }
-            id += 1;
             self.tag.store(id, Ordering::SeqCst);
             id
         };
