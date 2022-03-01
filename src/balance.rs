@@ -13,10 +13,15 @@ pub struct LoadBalance<C> where C: BalanceItem {
     pub rpc_clients: Vec<Arc<C>>,
 }
 
+/// an load balance type.
 pub enum LoadBalanceType {
+    /// RPC clients take turns to execute
     Round,
+    /// RPC clients random pick one
     Random,
+    /// RPC clients pick one by address's hashcode，so client_ip with client that is matches in pairs
     Hash,
+    /// RPC clients pick on by Has the minimum number of TCP connections
     MinConnect,
 }
 
