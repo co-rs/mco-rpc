@@ -100,7 +100,7 @@ impl BalanceManger {
 
     pub fn spawn_push(&self,service: String, addr: String) {
         loop {
-            let r = self.fetcher.push(service.clone(),addr.clone(),self.config.interval.clone());
+            let r = self.fetcher.push(service.clone(),addr.clone(),self.config.interval.clone()*2);
             if r.is_err() {
                 log::error!("service fetch fail:{}",r.err().unwrap());
             }
