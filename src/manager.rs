@@ -21,7 +21,8 @@ pub struct Manager {
 }
 
 impl Manager {
-    pub fn fetch(&mut self) -> Result<()> {
+    /// fetch addr list
+    pub fn fetch(&self) -> Result<()> {
         let addrs = self.fetcher.fetch();
         for addr in addrs {
             if !self.clients.have(&addr) {

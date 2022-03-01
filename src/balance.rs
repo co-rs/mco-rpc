@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use mco::std::sync::SyncVec;
 use rand::Rng;
 
 ///Defines the minimum abstraction required by the load algorithm
@@ -13,11 +14,11 @@ pub trait RpcClient {
 #[derive(Debug)]
 pub struct LoadBalance<C> where C: RpcClient {
     pub index: AtomicUsize,
-    pub rpc_clients: Vec<Arc<C>>,
+    pub rpc_clients: SyncVec<Arc<C>>,
 }
 
 /// an load balance type.
-#[derive(Clone,Debug,Copy)]
+#[derive(Clone, Debug, Copy)]
 pub enum LoadBalanceType {
     /// RPC clients take turns to execute
     Round,
@@ -33,19 +34,25 @@ impl<C> LoadBalance<C> where C: RpcClient {
     pub fn new() -> Self {
         Self {
             index: AtomicUsize::new(0),
-            rpc_clients: vec![],
+            rpc_clients: SyncVec::new(),
         }
     }
 
     /// put client,and return old client
-    pub fn put(&mut self, arg: C) -> Option<Arc<C>> {
+    pub fn put(&self, arg: C) -> Option<Arc<C>> {
         let mut arg = Some(Arc::new(arg));
         let addr = arg.as_deref().unwrap().addr();
-        for x in &mut self.rpc_clients {
+        let mut idx = 0;
+        for x in &self.rpc_clients {
             if x.addr().eq(addr) {
-                let r = std::mem::replace(x, arg.take().unwrap());
-                return Some(r);
+                let rm = self.rpc_clients.remove(idx);
+                if rm.is_none() {
+                    self.rpc_clients.push(arg.unwrap());
+                    return None;
+                }
+                return rm;
             }
+            idx += 1;
         }
         if let Some(arg) = arg {
             self.rpc_clients.push(arg);
@@ -53,11 +60,11 @@ impl<C> LoadBalance<C> where C: RpcClient {
         return None;
     }
 
-    pub fn remove(&mut self, address: &str) -> Option<Arc<C>> {
+    pub fn remove(&self, address: &str) -> Option<Arc<C>> {
         let mut idx = 0;
         for x in &self.rpc_clients {
             if x.addr().eq(address) {
-                return Some(self.rpc_clients.remove(idx));
+                return self.rpc_clients.remove(idx);
             }
             idx += 1;
         }
@@ -73,7 +80,7 @@ impl<C> LoadBalance<C> where C: RpcClient {
         return false;
     }
 
-    pub fn clear(&mut self) {
+    pub fn clear(&self) {
         self.rpc_clients.clear();
     }
 
@@ -114,7 +121,7 @@ impl<C> LoadBalance<C> where C: RpcClient {
             }
             value
         };
-        return Some(self.rpc_clients[(hash % length) as usize].clone());
+        return Some(self.rpc_clients.get((hash % length) as usize).unwrap().clone());
     }
 
     fn random_pick_client(&self) -> Option<Arc<C>> {
@@ -126,7 +133,7 @@ impl<C> LoadBalance<C> where C: RpcClient {
         let mut rng = thread_rng();
         let rand_index: usize = rng.gen_range(0..length);
         if rand_index < length {
-            return Some(self.rpc_clients[rand_index].clone());
+            return Some(self.rpc_clients.get(rand_index).unwrap().clone());
         }
         return None;
     }
@@ -142,7 +149,7 @@ impl<C> LoadBalance<C> where C: RpcClient {
         } else {
             self.index.store(idx + 1, Ordering::SeqCst);
         }
-        let return_obj = self.rpc_clients[idx].clone();
+        let return_obj = self.rpc_clients.get(idx).unwrap().clone();
         return Some(return_obj);
     }
 
