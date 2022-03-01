@@ -40,6 +40,9 @@ impl ClientStub {
         let mut req_buf = ReqBuf::new();
         let id = {
             let mut id = self.tag.load(Ordering::SeqCst);
+            if id == u64::MAX{
+                id = 0;
+            }
             id += 1;
             self.tag.store(id, Ordering::SeqCst);
             id
