@@ -3,6 +3,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use rand::Rng;
 
+///Defines the minimum abstraction required by the load algorithm
+///The four common load algorithms simply provide remote IP addresses
+///To use the LoadBalance structure, the client must implement this trait
 pub trait RpcClient {
     fn addr(&self) -> &str;
 }
