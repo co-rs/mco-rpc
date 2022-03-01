@@ -41,7 +41,8 @@ impl RegistryCenter for RedisCenter {
 
     fn push(&self, service: String, addr: String, ex: Duration) -> Result<()> {
         let mut l = self.c.lock().unwrap();
-        l.hset::<String, String, String, ()>(format!("service_{}", service), addr.to_string(), addr.to_string()).unwrap();
+        l.hset::<String, String, String, ()>(format!("service_{}", &service), addr.to_string(), addr.to_string()).unwrap();
+        l.expire::<String, ()>(format!("service_{}", service), ex.as_secs()*2 as usize);
         return Ok(());
     }
 }
