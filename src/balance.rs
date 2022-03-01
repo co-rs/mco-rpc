@@ -28,21 +28,23 @@ impl<C> LoadBalance<C> where C: BalanceItem {
         }
     }
 
-    pub fn put(&mut self, arg: C) {
+    /// put client,and return old client
+    pub fn put(&mut self, arg: C) -> Option<Arc<C>> {
         let mut arg = Some(Arc::new(arg));
         let addr = arg.as_deref().unwrap().addr();
         for x in &mut self.rpc_clients {
             if x.addr().eq(addr) {
-                *x = arg.take().unwrap();
-                break;
+                let r = std::mem::replace(x, arg.take().unwrap());
+                return Some(r);
             }
         }
         if let Some(arg) = arg {
             self.rpc_clients.push(arg);
         }
+        return None;
     }
 
-    pub fn remove(&mut self, address: &str) {
+    pub fn remove(&mut self, address: &str) -> Option<Arc<C>> {
         let mut idx = 0;
         let mut need_remove = None;
         for x in &self.rpc_clients {
@@ -52,8 +54,9 @@ impl<C> LoadBalance<C> where C: BalanceItem {
             idx += 1;
         }
         if let Some(rm) = need_remove {
-            self.rpc_clients.remove(rm);
+            return Some(self.rpc_clients.remove(rm));
         }
+        return None;
     }
 
     pub fn clear(&mut self) {
@@ -146,36 +149,57 @@ impl<C> LoadBalance<C> where C: BalanceItem {
 mod test {
     use balance::{BalanceItem, LoadBalance, LoadBalanceType};
 
+    impl BalanceItem for String {
+        fn addr(&self) -> &str {
+            &self
+        }
+    }
+
+    #[test]
+    fn test_put() {
+        let mut load: LoadBalance<String> = LoadBalance::new();
+        load.put("127.0.0.1:13000".to_string());
+        load.put("127.0.0.1:13001".to_string());
+
+        let old = load.put("127.0.0.1:13001".to_string()).unwrap();
+        assert_eq!(old.addr(), "127.0.0.1:13001".to_string());
+    }
+
+    #[test]
+    fn test_remove() {
+        let mut load: LoadBalance<String> = LoadBalance::new();
+        load.put("127.0.0.1:13000".to_string());
+        load.put("127.0.0.1:13001".to_string());
+
+        let old = load.remove("127.0.0.1:13000").unwrap();
+        assert_eq!(old.addr(), "127.0.0.1:13000".to_string());
+    }
+
     #[test]
     fn test_min_connect() {
-        impl BalanceItem for String{
-            fn addr(&self) -> &str {
-                &self
-            }
-        }
-        let mut load:LoadBalance<String> = LoadBalance::new();
+        let mut load: LoadBalance<String> = LoadBalance::new();
         load.put("127.0.0.1:13000".to_string());
         load.put("127.0.0.1:13001".to_string());
         load.put("127.0.0.1:13002".to_string());
         load.put("127.0.0.1:13003".to_string());
-        let mut v=vec![];
+        let mut v = vec![];
         let item = load.do_balance(LoadBalanceType::MinConnect, "");
-        println!("select:{}",item.as_ref().unwrap().addr());
+        println!("select:{}", item.as_ref().unwrap().addr());
         v.push(item);
         let item = load.do_balance(LoadBalanceType::MinConnect, "");
-        println!("select:{}",item.as_ref().unwrap().addr());
+        println!("select:{}", item.as_ref().unwrap().addr());
         v.push(item);
         let item = load.do_balance(LoadBalanceType::MinConnect, "");
-        println!("select:{}",item.as_ref().unwrap().addr());
+        println!("select:{}", item.as_ref().unwrap().addr());
         v.push(item);
         let item = load.do_balance(LoadBalanceType::MinConnect, "");
-        println!("select:{}",item.as_ref().unwrap().addr());
+        println!("select:{}", item.as_ref().unwrap().addr());
         v.push(item);
         let item = load.do_balance(LoadBalanceType::MinConnect, "");
-        println!("select:{}",item.as_ref().unwrap().addr());
+        println!("select:{}", item.as_ref().unwrap().addr());
         v.push(item);
         let item = load.do_balance(LoadBalanceType::MinConnect, "");
-        println!("select:{}",item.as_ref().unwrap().addr());
+        println!("select:{}", item.as_ref().unwrap().addr());
         v.push(item);
     }
 }
