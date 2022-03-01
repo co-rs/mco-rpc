@@ -142,6 +142,7 @@ impl<C> LoadBalance<C> where C: BalanceItem {
     }
 }
 
+#[cfg(test)]
 mod test {
     use balance::{BalanceItem, LoadBalance, LoadBalanceType};
 
