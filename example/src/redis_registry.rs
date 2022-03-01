@@ -6,18 +6,17 @@ use mco::{co};
 use mco_rpc::{BalanceManger, RegistryCenter, ManagerConfig};
 use mco_rpc::server::Server;
 use mco::std::errors::Result;
-use mco_redis::client::Client;
-use mco_redis::cmd;
-use mco_redis::connector::RedisConnector;
+use mco::std::sync::Mutex;
+use mco_redis_rs::Commands;
 
 pub struct RedisCenter {
-    c: Client,
+    c: Mutex<mco_redis_rs::Client>,
 }
 
 impl RedisCenter {
     pub fn new() -> Self {
         Self {
-            c: RedisConnector::new("127.0.0.1:6379".to_string()).connect().expect("connect redis 127.0.0.1:6379"),
+            c: Mutex::new(mco_redis_rs::Client::open("redis://127.0.0.1:6379".to_string()).expect("connect redis://127.0.0.1:6379")),
         }
     }
 }
@@ -25,27 +24,24 @@ impl RedisCenter {
 impl RegistryCenter for RedisCenter {
     fn pull(&self) -> HashMap<String, Vec<String>> {
         let mut m = HashMap::new();
-        //TODO use redis keys command get all service
-        if let Ok(v) = self.c.exec(cmd::Get("service_test")) {
-            let data = String::from_utf8(v.unwrap_or_default().to_vec()).unwrap_or_default();
-            let mut addrs: Vec<String> = serde_json::from_str(&data).unwrap_or_default();
-            m.insert("test".to_string(), addrs);
+        let mut l = self.c.lock().unwrap();
+        if let Ok(v) = l.keys::<&str, Vec<String>>("service*") {
+            for service in v {
+                if let Ok(list) = l.hgetall::<&str, HashMap<String, String>>(service.as_str()) {
+                    let mut data = Vec::with_capacity(list.len());
+                    for (k, _) in list {
+                        data.push(k);
+                    }
+                    m.insert(service.trim_start_matches("service_").to_string(), data);
+                }
+            }
         }
         return m;
     }
 
-    fn push(&self, service: String, addr: String,ex:Duration) -> Result<()> {
-        if let Ok(v) = self.c.exec(cmd::Get(&service)) {
-            let data = String::from_utf8(v.unwrap_or_default().to_vec()).unwrap_or_default();
-            let mut addrs: Vec<String> = serde_json::from_str(&data).unwrap_or_default();
-            if !addrs.contains(&addr) {
-                addrs.push(addr.clone());
-            }
-            self.c.exec(cmd::Set(format!("service_{}",service), serde_json::to_string(&addrs).unwrap_or_default())
-                .expire_secs(ex.as_secs() as i64)).unwrap();
-            return Ok(());
-        }
-        self.c.exec(cmd::Set(format!("service_{}",service), serde_json::to_string(&vec![addr]).unwrap_or_default())).unwrap();
+    fn push(&self, service: String, addr: String, ex: Duration) -> Result<()> {
+        let mut l = self.c.lock().unwrap();
+        l.hset::<String, String, String, ()>(format!("service_{}", service), addr.to_string(), addr.to_string()).unwrap();
         return Ok(());
     }
 }
@@ -58,7 +54,7 @@ fn main() {
     });
     sleep(Duration::from_secs(2));
     let m_clone = m.clone();
-    co!(move ||{
+    co!(0x2000,move ||{
        m_clone.spawn_pull();
     });
     sleep(Duration::from_secs(2));
@@ -67,7 +63,7 @@ fn main() {
 }
 
 fn spawn_server(manager: Arc<BalanceManger>) {
-    co!(move ||{
+    co!(0x2000,move ||{
          manager.spawn_push("test".to_string(), "127.0.0.1:10000".to_string());
     });
     let mut s = Server::default();
