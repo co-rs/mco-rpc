@@ -24,15 +24,16 @@ impl RedisCenter {
 impl RegistryCenter for RedisCenter {
     fn pull(&self) -> HashMap<String, Vec<String>> {
         let mut m = HashMap::new();
-        let mut l = self.c.lock().unwrap();
-        if let Ok(v) = l.keys::<&str, Vec<String>>("service*") {
-            for service in v {
-                if let Ok(list) = l.hgetall::<&str, HashMap<String, String>>(service.as_str()) {
-                    let mut data = Vec::with_capacity(list.len());
-                    for (k, _) in list {
-                        data.push(k);
+        if let Ok(mut l) = self.c.lock() {
+            if let Ok(v) = l.keys::<&str, Vec<String>>("service*") {
+                for service in v {
+                    if let Ok(list) = l.hgetall::<&str, HashMap<String, String>>(service.as_str()) {
+                        let mut data = Vec::with_capacity(list.len());
+                        for (k, _) in list {
+                            data.push(k);
+                        }
+                        m.insert(service.trim_start_matches("service_").to_string(), data);
                     }
-                    m.insert(service.trim_start_matches("service_").to_string(), data);
                 }
             }
         }
@@ -40,9 +41,10 @@ impl RegistryCenter for RedisCenter {
     }
 
     fn push(&self, service: String, addr: String, ex: Duration) -> Result<()> {
-        let mut l = self.c.lock().unwrap();
-        l.hset::<String, String, String, ()>(format!("service_{}", &service), addr.to_string(), addr.to_string()).unwrap();
-        l.expire::<String, ()>(format!("service_{}", service), ex.as_secs() as usize);
+        if let Ok(mut l) = self.c.lock() {
+            l.hset::<String, String, String, ()>(format!("service_{}", &service), addr.to_string(), addr.to_string()).unwrap();
+            l.expire::<String, ()>(format!("service_{}", service), ex.as_secs() as usize);
+        }
         return Ok(());
     }
 }
