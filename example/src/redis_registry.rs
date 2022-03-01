@@ -25,8 +25,12 @@ impl RedisCenter {
 impl RegistryCenter for RedisCenter {
     fn pull(&self) -> HashMap<String, Vec<String>> {
         let mut m = HashMap::new();
-        m.insert("test".to_string(), vec!["127.0.0.1:10000".to_string()]);
-        m
+        if let Ok(v) = self.c.exec(cmd::Get("test")) {
+            let data = String::from_utf8(v.unwrap_or_default().to_vec()).unwrap_or_default();
+            let mut addrs: Vec<String> = serde_json::from_str(&data).unwrap_or_default();
+            m.insert("test".to_string(), addrs);
+        }
+        return m;
     }
 
     fn push(&self, service: String, addr: String) -> Result<()> {
