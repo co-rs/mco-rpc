@@ -67,6 +67,9 @@ impl BalanceManger {
     /// fetch addr list
     pub fn pull(&self) -> Result<()> {
         let addrs = self.fetcher.pull();
+        if addrs.is_empty(){
+            self.clients.clear();
+        }
         for (s, addrs) in addrs {
             let balance = self.clients.get(&s);
             if let Some(clients) = balance {
