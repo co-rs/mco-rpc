@@ -159,7 +159,24 @@ mod test {
         load.put("127.0.0.1:13001".to_string());
         load.put("127.0.0.1:13002".to_string());
         load.put("127.0.0.1:13003".to_string());
+        let mut v=vec![];
         let item = load.do_balance(LoadBalanceType::MinConnect, "");
-        assert_eq!(item.is_some(), true);
+        println!("select:{}",item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}",item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}",item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}",item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}",item.as_ref().unwrap().addr());
+        v.push(item);
+        let item = load.do_balance(LoadBalanceType::MinConnect, "");
+        println!("select:{}",item.as_ref().unwrap().addr());
+        v.push(item);
     }
 }
