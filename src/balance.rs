@@ -3,12 +3,12 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use rand::Rng;
 
-pub trait BalanceItem {
+pub trait RpcClient {
     fn addr(&self) -> &str;
 }
 
 #[derive(Debug)]
-pub struct LoadBalance<C> where C: BalanceItem {
+pub struct LoadBalance<C> where C: RpcClient {
     pub index: AtomicUsize,
     pub rpc_clients: Vec<Arc<C>>,
 }
@@ -25,7 +25,7 @@ pub enum LoadBalanceType {
     MinConnect,
 }
 
-impl<C> LoadBalance<C> where C: BalanceItem {
+impl<C> LoadBalance<C> where C: RpcClient {
     pub fn new() -> Self {
         Self {
             index: AtomicUsize::new(0),
@@ -148,9 +148,9 @@ impl<C> LoadBalance<C> where C: BalanceItem {
 
 #[cfg(test)]
 mod test {
-    use balance::{BalanceItem, LoadBalance, LoadBalanceType};
+    use balance::{RpcClient, LoadBalance, LoadBalanceType};
 
-    impl BalanceItem for String {
+    impl RpcClient for String {
         fn addr(&self) -> &str {
             &self
         }

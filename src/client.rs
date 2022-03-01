@@ -6,7 +6,7 @@ use stub::ClientStub;
 use mco::std::errors::Result;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use balance::BalanceItem;
+use balance::RpcClient;
 
 #[derive(Debug)]
 pub struct Client {
@@ -34,7 +34,7 @@ impl Client {
     }
 }
 
-impl BalanceItem for Client{
+impl RpcClient for Client{
     fn addr(&self) -> &str {
         self.addr.as_str()
     }

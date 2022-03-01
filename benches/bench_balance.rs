@@ -7,13 +7,13 @@ use std::mem::MaybeUninit;
 use std::thread::sleep;
 use std::time::Duration;
 use mco::co;
-use mco_rpc::balance::{BalanceItem, LoadBalance, LoadBalanceType};
+use mco_rpc::balance::{RpcClient, LoadBalance, LoadBalanceType};
 use mco_rpc::client::Client;
 
 struct C{
    pub addr:String,
 }
-impl BalanceItem for C{
+impl RpcClient for C{
     fn addr(&self) -> &str {
         &self.addr
     }
