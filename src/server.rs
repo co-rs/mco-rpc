@@ -8,6 +8,7 @@ use std::io::Write;
 use std::marker::PhantomData;
 use std::net::ToSocketAddrs;
 use std::sync::Arc;
+use log::error;
 use mco::std::sync::SyncHashMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -134,7 +135,7 @@ impl Server {
                     let server = server.clone();
                     co!(move || server.call(s));
                 }
-                Err(e) => println!("err = {:?}", e),
+                Err(e) => error!("err = {:?}", e),
             }
         }
     }
