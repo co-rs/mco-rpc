@@ -125,7 +125,7 @@ impl BalanceManger {
             .ok_or(err!("no service '{}' find!",service))?
             .do_balance(self.config.balance, "") {
             None => {
-                Err(err!("no client to call!"))
+                Err(err!("no service '{}' find!",service))
             }
             Some(c) => {
                 c.call(func, arg)
@@ -138,7 +138,7 @@ impl BalanceManger {
             .get(service).ok_or(err!("no service '{}' find!",service))?
             .do_balance(self.config.balance, ip) {
             None => {
-                Err(err!("no client to call!"))
+                Err(err!("no service '{}' find!",service))
             }
             Some(c) => {
                 c.call(func, arg)

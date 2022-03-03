@@ -34,7 +34,7 @@ pub struct ClientStub {
 impl ClientStub {
     pub fn new() -> Self {
         Self {
-            timeout: Duration::from_secs(20),
+            timeout: Duration::from_secs(60),
             tag: AtomicU64::new(0),
         }
     }
