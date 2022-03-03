@@ -17,7 +17,7 @@ pub struct RedisCenter {
 impl RedisCenter {
     pub fn new() -> Self {
         Self {
-            server_prefix: "service:*".to_string(),
+            server_prefix: "service:".to_string(),
             c: Mutex::new(mco_redis_rs::Client::open("redis://127.0.0.1:6379".to_string()).expect("connect redis://127.0.0.1:6379")),
         }
     }
