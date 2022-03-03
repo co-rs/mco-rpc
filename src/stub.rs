@@ -2,7 +2,7 @@ use std::io::{BufReader, Read, Write};
 use std::ops::Index;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
-use log::{error, info};
+use log::{error, debug};
 use mco::{co, err};
 use mco::coroutine::spawn;
 use mco::net::TcpStream;
@@ -57,7 +57,7 @@ impl ClientStub {
             self.tag.store(id, Ordering::SeqCst);
             id
         };
-        info!("request id = {}", id);
+        debug!("request id = {}", id);
         let data = req_buf.finish(id);
         stream.write_all(&data)?;
         let time = std::time::Instant::now();
@@ -67,7 +67,7 @@ impl ClientStub {
             let rsp_frame = Frame::decode_from(stream).map_err(|e| Error::from(e))?;
             // discard the rsp that is is not belong to us
             if rsp_frame.id == id {
-                info!("get response id = {}", id);
+                debug!("get response id = {}", id);
                 let rsp_req = rsp_frame.decode_req();
                 let rsp_data = rsp_frame.decode_rsp().map_err(|e| Error::from(e.to_string()))?;
                 let resp: Resp = codec.decode(rsp_data)?;
@@ -96,21 +96,21 @@ impl ServerStub {
                 Ok(r) => r,
                 Err(ref e) => {
                     if e.kind() == std::io::ErrorKind::UnexpectedEof {
-                        info!("tcp server decode req: connection closed");
+                        debug!("tcp server decode req: connection closed");
                     } else {
                         error!("tcp server decode req: err = {:?}", e);
                     }
                     break;
                 }
             };
-            info!("get request: id={:?}", req.id);
+            debug!("get request: id={:?}", req.id);
             let mut rsp = RspBuf::new();
             let req_data = req.decode_req();
             if let Ok(h) = codec.decode::<PackReq>(&req_data) {
                 let stub = stubs.get(&h.m);
                 if stub.is_none() {
                     let data = rsp.finish(req.id, Err(WireError::ClientDeserialize(format!("method {} not find!", h.m))));
-                    info!("send rsp: id={}", req.id);
+                    debug!("send rsp: id={}", req.id);
                     // send the result back to client
                     stream.write(&data);
                     return;
@@ -119,7 +119,7 @@ impl ServerStub {
                 let r = stub.accept(&h.body, codec);
                 if let Err(e) = r {
                     let data = rsp.finish(req.id, Err(WireError::ClientDeserialize(format!("accept {} fail!", e))));
-                    info!("send rsp: id={}", req.id);
+                    debug!("send rsp: id={}", req.id);
                     // send the result back to client
                     stream.write(&data);
                     continue;
@@ -129,7 +129,7 @@ impl ServerStub {
             }
             // let ret = server.service(req.decode_req(), &mut rsp);
             let data = rsp.finish(req.id, Ok(()));
-            info!("send rsp ok: id={}", req.id);
+            debug!("send rsp ok: id={}", req.id);
             // send the result back to client
             stream.write(&data);
         }
