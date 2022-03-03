@@ -10,12 +10,14 @@ use mco::std::sync::Mutex;
 use mco_redis_rs::Commands;
 
 pub struct RedisCenter {
+    server_prefix: String,
     c: Mutex<mco_redis_rs::Client>,
 }
 
 impl RedisCenter {
     pub fn new() -> Self {
         Self {
+            server_prefix: "service:*".to_string(),
             c: Mutex::new(mco_redis_rs::Client::open("redis://127.0.0.1:6379".to_string()).expect("connect redis://127.0.0.1:6379")),
         }
     }
@@ -25,14 +27,14 @@ impl RegistryCenter for RedisCenter {
     fn pull(&self) -> HashMap<String, Vec<String>> {
         let mut m = HashMap::new();
         if let Ok(mut l) = self.c.lock() {
-            if let Ok(v) = l.keys::<&str, Vec<String>>("service*") {
+            if let Ok(v) = l.keys::<&str, Vec<String>>(&format!("{}*",self.server_prefix)) {
                 for service in v {
                     if let Ok(list) = l.hgetall::<&str, HashMap<String, String>>(service.as_str()) {
                         let mut data = Vec::with_capacity(list.len());
                         for (k, _) in list {
                             data.push(k);
                         }
-                        m.insert(service.trim_start_matches("service_").to_string(), data);
+                        m.insert(service.trim_start_matches(&self.server_prefix).to_string(), data);
                     }
                 }
             }
@@ -42,8 +44,8 @@ impl RegistryCenter for RedisCenter {
 
     fn push(&self, service: String, addr: String, ex: Duration) -> Result<()> {
         if let Ok(mut l) = self.c.lock() {
-            l.hset::<String, String, String, ()>(format!("service_{}", &service), addr.to_string(), addr.to_string()).unwrap();
-            l.expire::<String, ()>(format!("service_{}", service), ex.as_secs() as usize);
+            l.hset::<String, String, String, ()>(format!("{}{}", self.server_prefix, &service), addr.to_string(), addr.to_string()).unwrap();
+            l.expire::<String, ()>(format!("{}{}", &self.server_prefix, service), ex.as_secs() as usize);
         }
         return Ok(());
     }
