@@ -37,7 +37,13 @@ impl ClientStub {
     }
 
     pub fn call<Arg: Serialize, Resp: DeserializeOwned>(&self, method: &str, arg: Arg, codec: &Codecs, stream: &mut TcpStream) -> Result<Resp> {
+        let arg = PackReq {
+            m: method.to_string(),
+            body: codec.encode(arg)?,
+        };
+        let arg_data = codec.encode(arg)?;
         let mut req_buf = ReqBuf::new();
+        req_buf.write_all(&arg_data)?;
         let id = {
             let mut id = self.tag.load(Ordering::SeqCst);
             if id == u64::MAX{
@@ -49,12 +55,6 @@ impl ClientStub {
             id
         };
         info!("request id = {}", id);
-        let arg = PackReq {
-            m: method.to_string(),
-            body: codec.encode(arg)?,
-        };
-        let arg_data = codec.encode(arg)?;
-        req_buf.write_all(&arg_data)?;
         let data = req_buf.finish(id);
         stream.write_all(&data)?;
         // read the response
