@@ -71,7 +71,7 @@ impl<C> LoadBalance<C> where C: RpcClient {
         return None;
     }
 
-    pub fn have(&self, address: &str) -> bool {
+    pub fn contains(&self, address: &str) -> bool {
         for x in &self.rpc_clients {
             if x.addr().eq(address) {
                 return true;

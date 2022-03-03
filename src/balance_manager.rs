@@ -74,10 +74,19 @@ impl BalanceManger {
             let balance = self.clients.get(&s);
             if let Some(clients) = balance {
                 for addr in &addrs {
-                    if !clients.have(addr) {
+                    if !clients.contains(addr) {
                         let c = Client::dial(addr)?;
                         clients.put(c);
                     }
+                }
+                let mut removes = vec![];
+                for x in &clients.rpc_clients {
+                    if !addrs.contains(&x.addr){
+                        removes.push(&x.addr);
+                    }
+                }
+                for x in removes {
+                    clients.remove(x);
                 }
             } else {
                 let mut clients = LoadBalance::new();
