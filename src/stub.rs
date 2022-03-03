@@ -1,6 +1,7 @@
 use std::io::{BufReader, Read, Write};
 use std::ops::Index;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 use log::{error, info};
 use mco::{co, err};
 use mco::coroutine::spawn;
@@ -26,13 +27,15 @@ pub struct PackReq {
 /// which is then sent to the server remotely over the network
 #[derive(Debug)]
 pub struct ClientStub {
+    pub timeout: Duration,
     pub tag: AtomicU64,
 }
 
 impl ClientStub {
     pub fn new() -> Self {
         Self {
-            tag: AtomicU64::new(0)
+            timeout: Duration::from_secs(10),
+            tag: AtomicU64::new(0),
         }
     }
 
@@ -46,9 +49,9 @@ impl ClientStub {
         req_buf.write_all(&arg_data)?;
         let id = {
             let mut id = self.tag.load(Ordering::SeqCst);
-            if id == u64::MAX{
+            if id == u64::MAX {
                 id = 0;
-            }else{
+            } else {
                 id += 1;
             }
             self.tag.store(id, Ordering::SeqCst);
@@ -57,6 +60,7 @@ impl ClientStub {
         info!("request id = {}", id);
         let data = req_buf.finish(id);
         stream.write_all(&data)?;
+        let time = std::time::Instant::now();
         // read the response
         loop {
             // deserialize the rsp
@@ -68,6 +72,10 @@ impl ClientStub {
                 let rsp_data = rsp_frame.decode_rsp().map_err(|e| Error::from(e.to_string()))?;
                 let resp: Resp = codec.decode(rsp_data)?;
                 return Ok(resp);
+            } else {
+                if time.elapsed() > self.timeout {
+                    return Err(err!("rpc call timeout!"));
+                }
             }
         }
     }
