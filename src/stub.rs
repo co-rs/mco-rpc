@@ -2,7 +2,6 @@ use std::io::{BufReader, Write};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use log::{error, debug};
-use mco::{err};
 use mco::net::TcpStream;
 use mco::std::errors::Result;
 use mco::std::sync::SyncHashMap;
@@ -58,7 +57,8 @@ impl ClientStub {
         debug!("request id = {}", id);
         let data = req_buf.finish(id);
         stream.write_all(&data)?;
-        let time = std::time::Instant::now();
+        stream.set_read_timeout(self.timeout.clone().into())?;
+        stream.set_write_timeout(self.timeout.clone().into())?;
         // read the response
         loop {
             // deserialize the rsp
@@ -70,10 +70,6 @@ impl ClientStub {
                 let rsp_data = rsp_frame.decode_rsp().map_err(|e| Error::from(e.to_string()))?;
                 let resp: Resp = codec.decode(rsp_data)?;
                 return Ok(resp);
-            } else {
-                if time.elapsed() > self.timeout {
-                    return Err(err!("rpc call timeout!"));
-                }
             }
         }
     }
