@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Duration;
-use fast_log::sleep;
 use mco::{co};
 use mco_rpc::{BalanceManger, RegistryCenter, ManagerConfig};
 use mco_rpc::server::Server;
@@ -57,12 +56,12 @@ fn main() {
     co!(|| {
         spawn_server(m_clone);
     });
-    sleep(Duration::from_secs(2));
+    std::thread::sleep(Duration::from_secs(2));
     let m_clone = m.clone();
     co!(0x2000,move ||{
        m_clone.spawn_pull();
     });
-    sleep(Duration::from_secs(2));
+    std::thread::sleep(Duration::from_secs(2));
     let r = m.call::<i32, i32>("test", "handle", 1);
     println!("-> test.handle(1)\n<- {}", r.unwrap());
 }
