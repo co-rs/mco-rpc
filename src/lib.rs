@@ -1,9 +1,6 @@
 extern crate serde;
 extern crate mco;
-
-#[macro_use]
 extern crate serde_json;
-#[macro_use]
 extern crate bincode;
 #[macro_use]
 extern crate byteorder;

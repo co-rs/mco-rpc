@@ -1,6 +1,4 @@
 use std::io::{self, Cursor, ErrorKind, Read, Write};
-use mco::std::errors::Error;
-
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use log::{error, info};
 

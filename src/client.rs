@@ -1,8 +1,7 @@
 use std::cell::RefCell;
-use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 use mco::net::TcpStream;
-use codec::{BinCodec, Codec, Codecs};
+use codec::{BinCodec, Codecs};
 use stub::ClientStub;
 use mco::std::errors::Result;
 use serde::de::DeserializeOwned;

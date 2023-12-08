@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use mco::{co, err};
+use mco::{err};
 use mco::coroutine::sleep;
 use balance::{LoadBalance, LoadBalanceType};
 use client::Client;
 use mco::std::errors::Result;
-use mco::std::sync::{Mutex, SyncHashMap};
+use mco::std::sync::{SyncHashMap};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -89,7 +89,7 @@ impl BalanceManger {
                     clients.remove(x);
                 }
             } else {
-                let mut clients = LoadBalance::new();
+                let clients = LoadBalance::new();
                 for x in addrs {
                     let c = Client::dial(&x)?;
                     clients.put(c);

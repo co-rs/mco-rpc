@@ -1,11 +1,7 @@
-use std::any::Any;
-use mco::{co, err};
+use mco::{co};
 use mco::net::{TcpListener, TcpStream};
 use codec::{BinCodec, Codec, Codecs};
 use stub::ServerStub;
-use std::io::Read;
-use std::io::Write;
-use std::marker::PhantomData;
 use std::net::ToSocketAddrs;
 use std::sync::Arc;
 use log::error;
@@ -85,7 +81,6 @@ impl Server {
     ///register a handle to server
     /// ```
     /// use mco_rpc::server::{Handler};
-    /// use mco::std::errors::Result;
     ///
     /// pub struct H{}
     ///
@@ -93,7 +88,7 @@ impl Server {
     ///     type Req = i32;
     ///     type Resp = i32;
     ///
-    ///     fn handle(&self, req: Self::Req) -> Result<Self::Resp> {
+    ///     fn handle(&self, req: Self::Req) -> mco::std::errors::Result<Self::Resp> {
     ///         return Ok(req);
     ///     }
     /// }
@@ -107,14 +102,13 @@ impl Server {
     /// for example:
     /// ```
     /// use mco_rpc::server::{Server};
-    /// use mco::std::errors::Result;
     /// let mut s = Server::default();
     /// fn handle(req: i32) -> mco::std::errors::Result<i32> {
     ///     return Ok(req + 1);
     /// }
     ///     //s.codec = Codecs::JsonCodec(JsonCodec{});
     ///     s.register_fn("handle", handle);
-    ///     s.register_fn("handle_fn2", |arg:i32| -> Result<i32>{
+    ///     s.register_fn("handle_fn2", |arg:i32| -> mco::std::errors::Result<i32>{
     ///         Ok(1)
     ///     });
     /// ```

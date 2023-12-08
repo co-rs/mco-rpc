@@ -13,7 +13,7 @@ fn handle(req: i32) -> Result<i32> {
 }
 
 fn main() {
-    fast_log::init(Config::new()
+    _ = fast_log::init(Config::new()
         .console()
         .filter(ModuleFilter::new_exclude(vec!["mco_rpc::".to_string()])));
     co!(|| {
@@ -28,7 +28,7 @@ fn main() {
     let mut s = Server::default();
     //s.codec = Codecs::JsonCodec(JsonCodec{});
     s.register_fn("handle", handle);
-    s.register_fn("handle_fn2", |arg:i32| -> Result<i32>{
+    s.register_fn("handle_fn2", |_arg:i32| -> Result<i32>{
         Ok(1)
     });
     s.serve("0.0.0.0:10000");

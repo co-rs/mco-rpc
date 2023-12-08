@@ -1,5 +1,4 @@
-use std::io::{BufReader, Read, Write};
-use std::ops::Index;
+use std::io::{BufReader, Write};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use log::{error, debug};
@@ -67,7 +66,7 @@ impl ClientStub {
             // discard the rsp that is is not belong to us
             if rsp_frame.id == id {
                 debug!("get response id = {}", id);
-                let rsp_req = rsp_frame.decode_req();
+                let _ = rsp_frame.decode_req();
                 let rsp_data = rsp_frame.decode_rsp().map_err(|e| Error::from(e.to_string()))?;
                 let resp: Resp = codec.decode(rsp_data)?;
                 return Ok(resp);
@@ -111,7 +110,7 @@ impl ServerStub {
                     let data = rsp.finish(req.id, Err(WireError::ClientDeserialize(format!("method {} not find!", h.m))));
                     debug!("send rsp: id={}", req.id);
                     // send the result back to client
-                    stream.write(&data);
+                    _ = stream.write(&data);
                     return;
                 }
                 let stub = stub.unwrap();
@@ -120,17 +119,17 @@ impl ServerStub {
                     let data = rsp.finish(req.id, Err(WireError::ClientDeserialize(format!("accept {} fail!", e))));
                     debug!("send rsp: id={}", req.id);
                     // send the result back to client
-                    stream.write(&data);
+                    _ = stream.write(&data);
                     continue;
                 }
                 let r = r.unwrap();
-                rsp.write_all(&r);
+                _ = rsp.write_all(&r);
             }
             // let ret = server.service(req.decode_req(), &mut rsp);
             let data = rsp.finish(req.id, Ok(()));
             debug!("send rsp ok: id={}", req.id);
             // send the result back to client
-            stream.write(&data);
+            _ = stream.write(&data);
         }
     }
 }
